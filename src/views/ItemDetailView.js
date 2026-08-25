@@ -17,11 +17,64 @@
 // se llaman en pantalla, según tu tema.
 
 export default async function PublicationDetailView(params) {
-  // Implementación pendiente.
+  // 1. Importación dinámica del servicio dentro de la vista
+  const { default: PublicationsService } = await import(
+    "../services/itemsService.js"
+  );
+
+  // 2. Instancia del servicio y búsqueda del elemento por su ID
+  const service = new PublicationsService();
+  const publication = await service.getById(params?.id);
+
+  // 3. Manejo de elemento no encontrado
+  if (!publication) {
+    return `
+      <div class="card">
+        <h2>Proyecto no encontrado</h2>
+        <p>No se encontró ningún proyecto con el identificador <code>${params?.id ?? "desconocido"}</code>.</p>
+        <p><a href="/" data-link>← Volver al inicio</a></p>
+      </div>
+    `;
+  }
+
+  // 4. Renderizado de los datos del proyecto
   return `
-    <div class="card">
-      <h2>Detalle de elemento (pendiente de implementar)</h2>
-      <p>id recibido: ${params?.id ?? "sin definir"}</p>
-    </div>
+    <article class="card">
+      <p><a href="/" data-link>← Volver a proyectos</a></p>
+      <h2>${publication.title}</h2>
+      <p class="status-badge"><strong>Estado:</strong> ${publication.status} (${publication.progress}% avance)</p>
+      
+      <section>
+        <h3>Descripción</h3>
+        <p>${publication.description}</p>
+      </section>
+
+      <section>
+        <h3>Problemática</h3>
+        <p>${publication.problem}</p>
+      </section>
+
+      <section>
+        <h3>Objetivo general</h3>
+        <p>${publication.objective}</p>
+      </section>
+
+      <section>
+        <h3>ODS Vinculados</h3>
+        <ul>
+          ${publication.ods.map((odsItem) => `<li>${odsItem}</li>`).join("")}
+        </ul>
+      </section>
+
+      <section>
+        <h3>Información del equipo</h3>
+        <p><strong>Responsable:</strong> ${publication.creator}</p>
+        <p><strong>Integrantes actuales:</strong> ${publication.members}</p>
+      </section>
+
+      <hr style="margin: 1.5rem 0; border: 0; border-top: 1px solid #e5e7eb;" />
+      <a href="/" data-link>← Volver al catálogo de proyectos</a>
+    </article>
   `;
 }
+

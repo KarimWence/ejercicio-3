@@ -37,9 +37,42 @@ export default class Router {
    *   matchRoute("/item/2") -> { route: <ruta /item/:id>, params: { id: "2" } }
    */
   matchRoute(path) {
-    const route = this.routes.find((r) => r.path === path);
-    if (!route) return null;
-    return { route, params: {} };
+    for (const route of this.routes) {
+      // Coincidencia exacta (ej: "/", "/acerca")
+      if (route.path === path) {
+        return { route, params: {} };
+      }
+
+      // Coincidencia dinámica (ej: "/item/:id")
+      const routeSegments = route.path.split("/").filter(Boolean);
+      const pathSegments = path.split("/").filter(Boolean);
+
+      if (routeSegments.length !== pathSegments.length) {
+        continue;
+      }
+
+      const params = {};
+      let isMatch = true;
+
+      for (let i = 0; i < routeSegments.length; i++) {
+        const routeSegment = routeSegments[i];
+        const pathSegment = pathSegments[i];
+
+        if (routeSegment.startsWith(":")) {
+          const paramName = routeSegment.slice(1);
+          params[paramName] = decodeURIComponent(pathSegment);
+        } else if (routeSegment !== pathSegment) {
+          isMatch = false;
+          break;
+        }
+      }
+
+      if (isMatch) {
+        return { route, params };
+      }
+    }
+
+    return null;
   }
 
   async render() {
@@ -56,7 +89,7 @@ export default class Router {
 
     const html = await match.route.view(match.params);
     this.root.innerHTML = html;
-    document.title = `Mi Catálogo — ${path}`;
+    document.title = `Red Social Académica — ${path}`;
   }
 
   init() {
