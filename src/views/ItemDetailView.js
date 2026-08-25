@@ -16,7 +16,7 @@
 // TODO: una vez que funcione, ajusta qué campos mostrar y cómo
 // se llaman en pantalla, según tu tema.
 
-export default async function ItemDetailView(params) {
+export default async function PublicationDetailView(params) {
   // Implementación pendiente.
   return `
     <div class="card">

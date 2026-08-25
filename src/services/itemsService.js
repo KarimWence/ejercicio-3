@@ -12,39 +12,75 @@
 // Ejemplo si tu tema fuera "recetas":
 //   { id: "1", title: "Tacos al pastor", description: "...", meta: "30 min" }
 
-const ITEMS = [
+const PUBLICATIONS = [
   {
     id: "1",
-    title: "Elemento de ejemplo uno",
-    description: "Descripción corta del primer elemento de tu catálogo.",
-    meta: "Dato extra (ej. duración, precio, categoría...)",
+    title: "Huertos urbanos comunitarios",
+    description:
+      "Proyecto enfocado en desarrollar huertos urbanos comunitarios para promover el acceso a alimentos saludables y fomentar la participación de la comunidad.",
+    problem:
+      "En algunas comunidades existe un acceso limitado a alimentos frescos y saludables, además de pocos espacios destinados a la producción local.",
+    objective:
+      "Crear huertos urbanos administrados de manera colaborativa por miembros de la comunidad.",
+    ods: ["ODS 2 - Hambre cero", "ODS 11 - Ciudades y comunidades sostenibles"],
+    status: "En desarrollo",
+    creator: "María González",
+    members: 6,
+    progress: 65,
   },
   {
     id: "2",
-    title: "Elemento de ejemplo dos",
-    description: "Descripción corta del segundo elemento de tu catálogo.",
-    meta: "Dato extra",
+    title: "Plataforma de apoyo educativo",
+    description:
+      "Iniciativa para desarrollar una plataforma digital que facilite el acceso a recursos educativos y apoye el aprendizaje colaborativo entre estudiantes.",
+    problem:
+      "Algunos estudiantes tienen dificultades para encontrar recursos educativos confiables y espacios para colaborar fuera del aula.",
+    objective:
+      "Desarrollar una plataforma que permita compartir recursos y facilitar la colaboración académica.",
+    ods: ["ODS 4 - Educación de calidad"],
+    status: "Publicado",
+    creator: "Carlos Ramírez",
+    members: 4,
+    progress: 30,
   },
   {
     id: "3",
-    title: "Elemento de ejemplo tres",
-    description: "Descripción corta del tercer elemento de tu catálogo.",
-    meta: "Dato extra",
+    title: "Sistema de reciclaje universitario",
+    description:
+      "Proyecto orientado a mejorar la separación y recolección de residuos dentro de la comunidad universitaria mediante una solución tecnológica.",
+    problem:
+      "La separación inadecuada de residuos dificulta el reciclaje y genera una mayor cantidad de desechos dentro de la institución.",
+    objective:
+      "Implementar una solución que facilite la identificación, separación y seguimiento de los residuos reciclables.",
+    ods: ["ODS 12 - Producción y consumo responsables"],
+    status: "En desarrollo",
+    creator: "Ana Martínez",
+    members: 8,
+    progress: 70,
   },
   {
     id: "4",
-    title: "Elemento de ejemplo cuatro",
-    description: "Descripción corta del cuarto elemento de tu catálogo.",
-    meta: "Dato extra",
+    title: "Red de colaboración comunitaria",
+    description:
+      "Iniciativa que busca conectar estudiantes, docentes y organizaciones para colaborar en proyectos destinados a resolver problemáticas sociales.",
+    problem:
+      "Existe poca conexión entre las personas que tienen conocimientos académicos y las organizaciones que enfrentan problemáticas sociales.",
+    objective:
+      "Crear un espacio digital que facilite la formación de equipos y la colaboración entre distintos actores.",
+    ods: ["ODS 17 - Alianzas para lograr los objetivos"],
+    status: "En evaluación",
+    creator: "Luis Hernández",
+    members: 5,
+    progress: 90,
   },
 ];
 
-export default class ItemsService {
+export default class PublicationsService {
   async getAll() {
-    return ITEMS;
+    return PUBLICATIONS;
   }
 
   async getById(id) {
-    return ITEMS.find((item) => item.id === id) ?? null;
+    return PUBLICATIONS.find((publication) => publication.id === id) ?? null;
   }
 }
