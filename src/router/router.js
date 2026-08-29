@@ -1,17 +1,16 @@
-/**
- * Router — enrutador de cliente basado en la History API.
- *
- * Estado actual: SOLO soporta rutas EXACTAS (route.path === path).
- * TODO (Ejercicio - Parte A, punto 1): agrega soporte para rutas con
- * parámetros, como "/item/:id", dentro de matchRoute().
- */
+// router/router.js
+// Enrutador de cliente basado en la History API.
+// Conecta el App Shell con el contenido dinamico: SOLO modifica el contenedor root (#app).
+
 export default class Router {
   constructor(routes, rootElement) {
     this.routes = routes;
     this.root = rootElement;
 
+    // Escucha la navegacion de atras/adelante del navegador
     window.addEventListener("popstate", () => this.render());
 
+    // Intercepta clics en enlaces internos marcados con data-link
     document.addEventListener("click", (event) => {
       const link = event.target.closest("[data-link]");
       if (!link) return;
@@ -20,22 +19,14 @@ export default class Router {
     });
   }
 
+  // Navega a una ruta sin recargar la pagina
   navigate(path) {
+    if (path === window.location.pathname) return;
     window.history.pushState({}, "", path);
     this.render();
   }
 
-  /**
-   * Debe devolver { route, params } si alguna ruta coincide con "path",
-   * o null si ninguna coincide.
-   *
-   * Ahora mismo SOLO compara de forma exacta, por lo que "/item/1" no
-   * hace match con la ruta definida como "/item/:id".
-   *
-   * TODO: soporta segmentos dinámicos (":id") y regresa también los
-   * parámetros capturados, ej:
-   *   matchRoute("/item/2") -> { route: <ruta /item/:id>, params: { id: "2" } }
-   */
+  // Compara la ruta actual con las rutas registradas (soporta :id)
   matchRoute(path) {
     for (const route of this.routes) {
       // Coincidencia exacta (ej: "/", "/acerca")
@@ -43,7 +34,7 @@ export default class Router {
         return { route, params: {} };
       }
 
-      // Coincidencia dinámica (ej: "/item/:id")
+      // Coincidencia dinamica (ej: "/item/:id")
       const routeSegments = route.path.split("/").filter(Boolean);
       const pathSegments = path.split("/").filter(Boolean);
 
@@ -75,8 +66,28 @@ export default class Router {
     return null;
   }
 
+  // Skeleton de carga que se muestra mientras el router resuelve la vista
+  get skeletonHTML() {
+    return `
+      <div class="skeleton">
+        <div class="skeleton__line skeleton__line--title"></div>
+        <div class="skeleton__line skeleton__line--wide"></div>
+        <div class="skeleton__line" style="width: 40%"></div>
+        <div class="skeleton__grid">
+          <div class="skeleton__card"></div>
+          <div class="skeleton__card"></div>
+          <div class="skeleton__card"></div>
+        </div>
+      </div>
+    `;
+  }
+
   async render() {
     const path = window.location.pathname;
+
+    // Mostrar skeleton inmediatamente dentro de #app
+    this.root.innerHTML = this.skeletonHTML;
+
     const match = this.matchRoute(path);
 
     if (!match) {
@@ -89,7 +100,8 @@ export default class Router {
 
     const html = await match.route.view(match.params);
     this.root.innerHTML = html;
-    document.title = `Red Social Académica — ${path}`;
+    document.title = `Red Social Academica - ${path}`;
+    window.scrollTo({ top: 0, behavior: "instant" });
   }
 
   init() {
