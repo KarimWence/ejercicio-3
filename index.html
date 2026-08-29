@@ -3,23 +3,53 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Red Social Académica - Proyectos ODS</title>
+  <title>Proyectos con Impacto Social - ODS</title>
+  
+  <!-- Tipografias externas para identidad visual -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- Estilos divididos: Shell (fijo) y Content (dinamico) -->
   <link rel="stylesheet" href="styles/main.css" />
 </head>
 <body>
-  <header>
-    <h1>Red Social Académica</h1>
-    <nav>
+  <!-- ==========================================
+       APP SHELL: Estructura fija de la aplicacion
+       (Header, Navegacion, Contenedor raiz y Footer)
+       ========================================== -->
+  <header class="site-header">
+    <a href="/" data-link class="brand">
+      <span class="brand__mark">●</span> Proyectos<span class="brand__accent">ODS</span>
+    </a>
+    <nav class="site-nav">
       <a href="/" data-link>Inicio</a>
       <a href="/acerca" data-link>Acerca de</a>
     </nav>
   </header>
 
-  <main id="app">Cargando...</main>
+  <!-- CONTENEDOR RAIZ: El router solo reemplaza lo que hay dentro de #app.
+       Incluye el skeleton inicial en el HTML estatico del App Shell para que
+       sea visible de inmediato mientras el JavaScript carga y resuelve la ruta. -->
+  <main id="app" class="app-root">
+    <div class="skeleton" role="status" aria-label="Cargando contenido">
+      <div class="skeleton__line skeleton__line--title"></div>
+      <div class="skeleton__line skeleton__line--wide"></div>
+      <div class="skeleton__line" style="width: 40%"></div>
+      <div class="skeleton__grid">
+        <div class="skeleton__card"></div>
+        <div class="skeleton__card"></div>
+        <div class="skeleton__card"></div>
+      </div>
+    </div>
+  </main>
 
-  <footer>
-    <p>Plataforma de Proyectos Académicos con Enfoque en Impacto Social · ODS 2030</p>
+  <footer class="site-footer">
+    <p>Red Social Academica con Enfoque en Impacto Social · ODS 2030</p>
   </footer>
+  <!-- ==========================================
+       FIN DEL APP SHELL
+       ========================================== -->
 
   <script type="module" src="src/main.js"></script>
 </body>
