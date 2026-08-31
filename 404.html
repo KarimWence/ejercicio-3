@@ -14,10 +14,7 @@
   <link rel="stylesheet" href="styles/main.css" />
 </head>
 <body>
-  <!-- ==========================================
-       APP SHELL: Estructura fija de la aplicacion
-       (Header, Navegacion, Contenedor raiz y Footer)
-       ========================================== -->
+  <!-- App Shell: Header y Navegacion Fijos -->
   <header class="site-header">
     <a href="/" data-link class="brand">
       <span class="brand__mark">●</span> Proyectos<span class="brand__accent">ODS</span>
@@ -29,9 +26,7 @@
     </nav>
   </header>
 
-  <!-- CONTENEDOR RAIZ: El router solo reemplaza lo que hay dentro de #app.
-       Incluye el skeleton inicial en el HTML estatico del App Shell para que
-       sea visible de inmediato mientras el JavaScript carga y resuelve la ruta. -->
+  <!-- App Shell Container: Inyeccion de Vistas con Skeleton inicial -->
   <main id="app" class="app-root">
     <div class="skeleton" role="status" aria-label="Cargando contenido">
       <div class="skeleton__line skeleton__line--title"></div>
@@ -45,12 +40,10 @@
     </div>
   </main>
 
+  <!-- App Shell: Footer Fijo -->
   <footer class="site-footer">
     <p>Red Social Academica con Enfoque en Impacto Social · ODS 2030</p>
   </footer>
-  <!-- ==========================================
-       FIN DEL APP SHELL
-       ========================================== -->
 
   <script type="module" src="src/main.js"></script>
 </body>
