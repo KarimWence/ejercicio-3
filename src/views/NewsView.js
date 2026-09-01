@@ -59,17 +59,32 @@ export default async function NewsView() {
       `;
     }
   } catch (error) {
-    // 4. Estado Error: Mensaje visible si la peticion a la API falla
-    contentHtml = `
-      <div class="card error-card">
-        <p class="hero__eyebrow">Error de conexion</p>
-        <h2>No se pudieron cargar las noticias</h2>
-        <p>Ocurrio un problema al conectar con la API REST externa: <code>${error.message}</code></p>
-        <p><a href="/noticias" data-link class="btn-link">Intentar de nuevo</a></p>
-      </div>
-    `;
-  }
+  contentHtml = `
+    <section class="error-card" role="alert">
+      <div class="error-card__icon" aria-hidden="true">!</div>
 
+      <div class="error-card__content">
+        <p class="error-card__eyebrow">Error de conexión</p>
+
+        <h2>No pudimos cargar las noticias</h2>
+
+        <p class="error-card__message">
+          Parece que hubo un problema al comunicarnos con el servicio.
+          Comprueba tu conexión e inténtalo nuevamente.
+        </p>
+
+        <details class="error-card__details">
+          <summary>Ver detalles técnicos</summary>
+          <code>${error.message}</code>
+        </details>
+
+        <a href="/noticias" data-link class="error-card__button">
+          Intentar de nuevo
+        </a>
+      </div>
+    </section>
+  `;
+}
   return `
     <header class="hero">
       <p class="hero__eyebrow">Actualidad Cientifica</p>

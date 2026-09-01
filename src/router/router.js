@@ -2,6 +2,8 @@
 // Enrutador de cliente basado en la History API.
 // Conecta el App Shell con el contenido dinamico: SOLO modifica el contenedor root (#app).
 
+import { createSkeleton } from "../components/Skeleton.js";
+
 export default class Router {
   constructor(routes, rootElement) {
     this.routes = routes;
@@ -21,7 +23,12 @@ export default class Router {
 
   // Navega a una ruta sin recargar la pagina
   navigate(path) {
-    if (path === window.location.pathname) return;
+    // Si estamos en la misma página, vuelve a cargar su contenido
+    if (path === window.location.pathname) {
+      this.render();
+      return;
+    }
+
     window.history.pushState({}, "", path);
     this.render();
   }
@@ -67,26 +74,13 @@ export default class Router {
   }
 
   // Skeleton de carga que se muestra mientras el router resuelve la vista
-  get skeletonHTML() {
-    return `
-      <div class="skeleton">
-        <div class="skeleton__line skeleton__line--title"></div>
-        <div class="skeleton__line skeleton__line--wide"></div>
-        <div class="skeleton__line" style="width: 40%"></div>
-        <div class="skeleton__grid">
-          <div class="skeleton__card"></div>
-          <div class="skeleton__card"></div>
-          <div class="skeleton__card"></div>
-        </div>
-      </div>
-    `;
-  }
+
 
   async render() {
     const path = window.location.pathname;
 
     // Mostrar skeleton inmediatamente dentro de #app
-    this.root.innerHTML = this.skeletonHTML;
+   this.root.replaceChildren(createSkeleton());
 
     const match = this.matchRoute(path);
 
