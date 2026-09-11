@@ -48,6 +48,8 @@ function selectTheme(theme) {
 
     localStorage.setItem(THEME_STORAGE_KEY, validTheme);
     applyTheme(validTheme);
+
+    window.dispatchEvent(new CustomEvent("storage-updated"));
 }
 
 /**

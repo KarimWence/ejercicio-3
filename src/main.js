@@ -3,6 +3,8 @@ import HomeView from "./views/HomeView.js";
 import AboutView from "./views/AboutView.js";
 import PublicationDetailView from "./views/ItemDetailView.js";
 import NewsView from "./views/NewsView.js";
+import DiagnosticsView from "./views/DiagnosticsView.js";
+import { deleteCookie } from "./services/cookieService.js";
 import { initializeTheme } from "./utils/theme.js";
 import { registerVisit } from "./services/cookieService.js";
 
@@ -18,6 +20,10 @@ const routes = [
     {
         path: "/acerca",
         view: AboutView,
+    },
+    {
+        path: "/diagnostico",
+        view: DiagnosticsView,
     },
     {
         path: "/item/:id",
@@ -49,6 +55,31 @@ document.addEventListener("submit", (event) => {
     }
 
     // Renderiza nuevamente la vista sin solicitar /noticias al servidor
+    router.render();
+});
+
+document.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-clear-storage]");
+
+    if (!button) {
+        return;
+    }
+
+    const storageType = button.dataset.clearStorage;
+
+    if (storageType === "local") {
+        localStorage.removeItem("app-theme");
+        document.documentElement.dataset.theme = "light";
+    } else if (storageType === "session") {
+        sessionStorage.removeItem("newsSearch");
+    } else if (storageType === "cookie") {
+        deleteCookie("appVisits");
+    }
+
+    router.render();
+});
+
+window.addEventListener("storage-updated", () => {
     router.render();
 });
 
