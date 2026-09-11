@@ -30,5 +30,23 @@ const router = new Router(routes, app);
 // Recupera y aplica el tema guardado
 initializeTheme();
 
+document.addEventListener("submit", (event) => {
+    if (event.target.id !== "news-search-form") return;
+
+    event.preventDefault();
+
+    const formData = new FormData(event.target);
+    const search = String(formData.get("search") || "").trim();
+
+    if (search) {
+        sessionStorage.setItem("newsSearch", search);
+    } else {
+        sessionStorage.removeItem("newsSearch");
+    }
+
+    // Renderiza nuevamente la vista sin solicitar /noticias al servidor
+    router.render();
+});
+
 // Inicia el router
 router.init();
