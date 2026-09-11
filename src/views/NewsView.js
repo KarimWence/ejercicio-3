@@ -4,12 +4,15 @@ import ApiService from "../services/apiService.js";
 export default async function NewsView() {
   const api = new ApiService();
 
+  const savedSearch = sessionStorage.getItem("newsSearch") || "";
+  const searchTerm = savedSearch.trim();
+
   // 1. Estado Cargando: Se muestra el skeleton antes de resolver la peticion
   let contentHtml = "";
 
   try {
     // 2. Llamada asincrona al servicio con async/await
-    const articles = await api.getNews(9);
+    const articles = await api.getNews(9, searchTerm);
 
     if (!articles || articles.length === 0) {
       contentHtml = `
@@ -86,6 +89,15 @@ export default async function NewsView() {
   `;
 }
   return `
+    <form id="news-search-form" class="search-form">
+      <input
+        type="search"
+        name="search"
+        placeholder="Buscar noticias..."
+        value="${searchTerm.replace(/"/g, "&quot;")}"
+      />
+      <button type="submit">Buscar</button>
+    </form>
     <header class="hero">
       <p class="hero__eyebrow">Actualidad Cientifica</p>
       <h2 class="hero__title">Noticias de Ciencia y Tecnologia</h2>

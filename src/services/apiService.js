@@ -9,8 +9,16 @@ export default class ApiService {
   }
 
   // Obtiene un listado de articulos de ciencia y tecnologia
-  async getNews(limit = 9) {
-    const url = `${this.baseUrl}/?limit=${limit}`;
+  async getNews(limit = 9, search = "") {
+    const params = new URLSearchParams({
+      limit: String(limit),
+    });
+
+    if (search.trim()) {
+      params.set("search", search.trim());
+    }
+
+    const url = `${this.baseUrl}/?${params.toString()}`;
 
     let attempts = 0;
 

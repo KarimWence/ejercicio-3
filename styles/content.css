@@ -816,3 +816,90 @@ html[data-theme="dark"] .status-badge {
 .detail-footer {
     border-color: var(--theme-border);
 }
+
+/* ==================================================
+   BUSCADOR DE NOTICIAS
+   ================================================== */
+
+.search-form {
+    display: flex;
+    align-items: stretch;
+    gap: 0.65rem;
+    width: 100%;
+    max-width: 42rem;
+    margin: 0 0 2rem;
+}
+
+.search-form input {
+    flex: 1;
+    min-width: 0;
+    padding: 0.8rem 1rem;
+
+    color: var(--theme-text);
+    background-color: var(--theme-surface);
+    border: 1px solid var(--theme-border);
+    border-radius: var(--radius);
+
+    font: inherit;
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease,
+        background-color 0.3s ease;
+}
+
+.search-form input::placeholder {
+    color: var(--theme-text-soft);
+}
+
+.search-form input:focus {
+    outline: none;
+    border-color: var(--theme-primary);
+    box-shadow: 0 0 0 3px color-mix(
+        in srgb,
+        var(--theme-primary) 20%,
+        transparent
+    );
+}
+
+.search-form button {
+    padding: 0.8rem 1.25rem;
+
+    color: #ffffff;
+    background-color: var(--theme-primary);
+    border: 1px solid var(--theme-primary);
+    border-radius: var(--radius);
+
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+
+    transition:
+        background-color 0.2s ease,
+        border-color 0.2s ease,
+        transform 0.2s ease;
+}
+
+.search-form button:hover {
+    background-color: var(--theme-primary-hover);
+    border-color: var(--theme-primary-hover);
+    transform: translateY(-1px);
+}
+
+.search-form button:focus-visible {
+    outline: 3px solid color-mix(
+        in srgb,
+        var(--theme-accent) 35%,
+        transparent
+    );
+    outline-offset: 3px;
+}
+
+@media (max-width:  thirtyem) {
+    .search-form {
+        flex-direction: column;
+    }
+
+    .search-form button {
+        width: 100%;
+    }
+}
