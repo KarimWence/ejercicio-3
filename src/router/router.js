@@ -4,6 +4,7 @@
 
 import { createSkeleton } from "../components/Skeleton.js";
 
+
 export default class Router {
   constructor(routes, rootElement) {
     this.routes = routes;
@@ -102,3 +103,4 @@ export default class Router {
     this.render();
   }
 }
+

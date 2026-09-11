@@ -18,16 +18,60 @@
        APP SHELL: Estructura fija de la aplicacion
        (Header, Navegacion, Contenedor raiz y Footer)
        ========================================== -->
-  <header class="site-header">
+<header class="site-header">
     <a href="/" data-link class="brand">
-      <span class="brand__mark">●</span> Proyectos<span class="brand__accent">ODS</span>
+        <span class="brand__mark">●</span>
+        Proyectos<span class="brand__accent">ODS</span>
     </a>
+
     <nav class="site-nav">
-      <a href="/" data-link>Inicio</a>
-      <a href="/noticias" data-link>Noticias</a>
-      <a href="/acerca" data-link>Acerca de</a>
+        <a href="/" data-link>Inicio</a>
+        <a href="/noticias" data-link>Noticias</a>
+        <a href="/acerca" data-link>Acerca de</a>
     </nav>
-  </header>
+
+<button
+    id="themeToggle"
+    class="theme-toggle"
+    type="button"
+    aria-label="Cambiar a tema oscuro"
+    title="Cambiar tema"
+>
+    <!-- Sol: se muestra en tema claro -->
+    <svg
+        class="theme-toggle__icon theme-toggle__icon--sun"
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+    >
+        <circle cx="12" cy="12" r="4"></circle>
+        <path d="M12 2v2"></path>
+        <path d="M12 20v2"></path>
+        <path d="m4.93 4.93 1.42 1.42"></path>
+        <path d="m17.66 17.66 1.41 1.41"></path>
+        <path d="M2 12h2"></path>
+        <path d="M20 12h2"></path>
+        <path d="m6.35 17.66-1.42 1.41"></path>
+        <path d="m19.07 4.93-1.41 1.42"></path>
+    </svg>
+
+    <!-- Luna: se muestra en tema oscuro -->
+    <svg
+        class="theme-toggle__icon theme-toggle__icon--moon"
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+    >
+        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"></path>
+    </svg>
+
+    <span class="theme-toggle__text theme-toggle__text--light">
+        Claro
+    </span>
+
+    <span class="theme-toggle__text theme-toggle__text--dark">
+        Oscuro
+    </span>
+</button>
+</header>
 
   <!-- CONTENEDOR RAIZ: El router solo reemplaza lo que hay dentro de #app.
        Incluye el skeleton inicial en el HTML estatico del App Shell para que
