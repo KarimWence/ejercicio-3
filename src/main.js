@@ -4,6 +4,7 @@ import AboutView from "./views/AboutView.js";
 import PublicationDetailView from "./views/ItemDetailView.js";
 import NewsView from "./views/NewsView.js";
 import { initializeTheme } from "./utils/theme.js";
+import { registerVisit } from "./services/cookieService.js";
 
 const routes = [
     {
@@ -29,6 +30,9 @@ const router = new Router(routes, app);
 
 // Recupera y aplica el tema guardado
 initializeTheme();
+
+const visitCount = registerVisit();
+console.log(`Visita número ${visitCount} durante los últimos 30 días.`);
 
 document.addEventListener("submit", (event) => {
     if (event.target.id !== "news-search-form") return;
