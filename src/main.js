@@ -7,6 +7,10 @@ import DiagnosticsView from "./views/DiagnosticsView.js";
 import { deleteCookie } from "./services/cookieService.js";
 import { initializeTheme } from "./utils/theme.js";
 import { registerVisit } from "./services/cookieService.js";
+import {
+    removeStorageItem,
+    writeStorageItem,
+} from "./utils/storage.js";
 
 const routes = [
     {
@@ -49,9 +53,9 @@ document.addEventListener("submit", (event) => {
     const search = String(formData.get("search") || "").trim();
 
     if (search) {
-        sessionStorage.setItem("newsSearch", search);
+        writeStorageItem("sessionStorage", "newsSearch", search);
     } else {
-        sessionStorage.removeItem("newsSearch");
+        removeStorageItem("sessionStorage", "newsSearch");
     }
 
     // Renderiza nuevamente la vista sin solicitar /noticias al servidor
@@ -68,10 +72,10 @@ document.addEventListener("click", (event) => {
     const storageType = button.dataset.clearStorage;
 
     if (storageType === "local") {
-        localStorage.removeItem("app-theme");
+        removeStorageItem("localStorage", "app-theme");
         document.documentElement.dataset.theme = "light";
     } else if (storageType === "session") {
-        sessionStorage.removeItem("newsSearch");
+        removeStorageItem("sessionStorage", "newsSearch");
     } else if (storageType === "cookie") {
         deleteCookie("appVisits");
     }

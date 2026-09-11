@@ -1,12 +1,13 @@
 import { getCookie } from "../services/cookieService.js";
+import { readStorageItem } from "../utils/storage.js";
 
 function getStorageValue(value) {
   return value === null || value === "" ? "Sin valor guardado" : value;
 }
 
 export default function DiagnosticsView() {
-  const theme = localStorage.getItem("app-theme");
-  const newsSearch = sessionStorage.getItem("newsSearch");
+  const theme = readStorageItem("localStorage", "app-theme");
+  const newsSearch = readStorageItem("sessionStorage", "newsSearch");
   const visits = getCookie("appVisits");
 
   return `

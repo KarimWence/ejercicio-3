@@ -931,6 +931,24 @@ html[data-theme="dark"] .status-badge {
     outline-offset: 3px;
 }
 
+.storage-warning {
+    position: fixed;
+    right: 1rem;
+    bottom: 1rem;
+    z-index: 20;
+    max-width: min(28rem, calc(100% - 2rem));
+    padding: 0.85rem 1rem;
+
+    color: var(--theme-text);
+    background-color: var(--theme-surface);
+    border: 1px solid var(--theme-accent);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--theme-shadow);
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+
 @media (max-width:  thirtyem) {
     .search-form {
         flex-direction: column;

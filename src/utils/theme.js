@@ -1,3 +1,5 @@
+import { readStorageItem, writeStorageItem } from "./storage.js";
+
 const THEME_STORAGE_KEY = "app-theme";
 const DEFAULT_THEME = "light";
 
@@ -46,7 +48,7 @@ function applyTheme(theme) {
 function selectTheme(theme) {
     const validTheme = getValidTheme(theme);
 
-    localStorage.setItem(THEME_STORAGE_KEY, validTheme);
+    writeStorageItem("localStorage", THEME_STORAGE_KEY, validTheme);
     applyTheme(validTheme);
 
     window.dispatchEvent(new CustomEvent("storage-updated"));
@@ -57,7 +59,7 @@ function selectTheme(theme) {
  */
 export function initializeTheme() {
     const savedTheme =
-        localStorage.getItem(THEME_STORAGE_KEY) || DEFAULT_THEME;
+        readStorageItem("localStorage", THEME_STORAGE_KEY) || DEFAULT_THEME;
 
     applyTheme(savedTheme);
 

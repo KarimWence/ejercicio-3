@@ -1,10 +1,11 @@
 // views/NewsView.js
 import ApiService from "../services/apiService.js";
+import { readStorageItem } from "../utils/storage.js";
 
 export default async function NewsView() {
   const api = new ApiService();
 
-  const savedSearch = sessionStorage.getItem("newsSearch") || "";
+  const savedSearch = readStorageItem("sessionStorage", "newsSearch") || "";
   const searchTerm = savedSearch.trim();
 
   // 1. Estado Cargando: Se muestra el skeleton antes de resolver la peticion
