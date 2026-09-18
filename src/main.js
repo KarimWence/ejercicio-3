@@ -26,6 +26,7 @@ import {
 import {
     initializeTheme,
 } from "./utils/theme.js";
+import { showFeedback } from "./utils/feedback.js";
 
 
 const routes = [
@@ -149,17 +150,28 @@ document.addEventListener("click", async (event) => {
             console.error(
                 `No se encontró el proyecto con ID: ${projectId}`
             );
+            showFeedback("No se encontró el proyecto solicitado.", "error");
 
             return;
         }
 
-        await saveFavoriteProject(project);
+        try {
+            await saveFavoriteProject(project);
 
-        favoriteButton.textContent =
-            "★ Agregado a favoritos";
+            favoriteButton.textContent =
+                "★ Agregado a favoritos";
 
-        favoriteButton.disabled = true;
-        favoriteButton.setAttribute("aria-pressed", "true");
+            favoriteButton.disabled = true;
+            favoriteButton.setAttribute("aria-pressed", "true");
+
+            showFeedback("Proyecto agregado a favoritos.", "success");
+        } catch (error) {
+            console.error("No se pudo guardar el proyecto favorito:", error);
+            showFeedback(
+                "No se pudo guardar en favoritos. Comprueba el almacenamiento de tu navegador e inténtalo de nuevo.",
+                "error"
+            );
+        }
 
         return;
     }
@@ -180,8 +192,14 @@ document.addEventListener("click", async (event) => {
                                 showSkeleton: false,
                                 scrollToTop: false,
                         });
+
+                        showFeedback("Proyecto eliminado de favoritos.", "success");
                 } catch (error) {
                         console.error("No se pudo eliminar el proyecto favorito:", error);
+                        showFeedback(
+                            "No se pudo eliminar de favoritos. Inténtalo nuevamente.",
+                            "error"
+                        );
                 }
 
                 return;
