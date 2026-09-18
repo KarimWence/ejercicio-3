@@ -1,24 +1,30 @@
 import Router from "./router/router.js";
+import { deleteFavoriteProject } from "./services/dbService.js";
 import HomeView from "./views/HomeView.js";
 import AboutView from "./views/AboutView.js";
 import PublicationDetailView from "./views/ItemDetailView.js";
 import NewsView from "./views/NewsView.js";
 import DiagnosticsView from "./views/DiagnosticsView.js";
-import ProjectsView, {
-    setCategoryFilter,
-} from "./views/ProjectsView.js";
+import FavoritesView from "./views/FavoritesView.js";
 
 import {
     saveFavoriteProject,
-    deleteFavoriteProject,
 } from "./services/dbService.js";
-import { deleteCookie } from "./services/cookieService.js";
-import { initializeTheme } from "./utils/theme.js";
-import { registerVisit } from "./services/cookieService.js";
+
+import {
+    deleteCookie,
+    registerVisit,
+} from "./services/cookieService.js";
+
 import {
     removeStorageItem,
     writeStorageItem,
 } from "./utils/storage.js";
+
+import {
+    initializeTheme,
+} from "./utils/theme.js";
+
 
 const routes = [
     {
@@ -30,8 +36,8 @@ const routes = [
         view: NewsView,
     },
     {
-        path: "/registros",
-        view: ProjectsView,
+        path: "/favoritos",
+        view: FavoritesView,
     },
     {
         path: "/acerca",
@@ -47,138 +53,170 @@ const routes = [
     },
 ];
 
+
 const app = document.getElementById("app");
 const router = new Router(routes, app);
+
 
 // Recupera y aplica el tema guardado
 initializeTheme();
 
+
+// Registra la visita del usuario
 const visitCount = registerVisit();
-console.log(`Visita número ${visitCount} durante los últimos 30 días.`);
 
+console.log(
+    `Visita número ${visitCount} durante los últimos 30 días.`
+);
+
+
+// Formularios
 document.addEventListener("submit", async (event) => {
-    // Formulario para agregar proyectos
-    if (event.target.id === "project-form") {
-        event.preventDefault();
+    // Formulario de búsqueda de noticias
+    if (event.target.id !== "news-search-form") {
+        return;
+    }
 
-        const formData = new FormData(event.target);
+    event.preventDefault();
 
-        const title = String(
-            formData.get("title") || ""
-        ).trim();
+    const formData = new FormData(event.target);
 
-        const category = String(
-            formData.get("category") || ""
-        ).trim();
+    const search = String(
+        formData.get("search") || ""
+    ).trim();
 
-        const description = String(
-            formData.get("description") || ""
-        ).trim();
+    if (search) {
+        writeStorageItem(
+            "sessionStorage",
+            "newsSearch",
+            search
+        );
+    } else {
+        removeStorageItem(
+            "sessionStorage",
+            "newsSearch"
+        );
+    }
 
-        if (!title || !category || !description) {
+    await router.render({
+        showSkeleton: false,
+        scrollToTop: false,
+    });
+});
+
+
+// Botones y acciones
+document.addEventListener("click", async (event) => {
+    /*
+     * Agregar un proyecto a favoritos
+     */
+    const favoriteButton = event.target.closest(
+        "[data-add-favorite]"
+    );
+
+    if (favoriteButton) {
+        const projectId =
+            favoriteButton.dataset.addFavorite;
+
+        const { default: PublicationsService } =
+            await import("./services/itemsService.js");
+
+        const service = new PublicationsService();
+
+        const project = await service.getById(projectId);
+
+        if (!project) {
+            console.error(
+                `No se encontró el proyecto con ID: ${projectId}`
+            );
+
             return;
         }
 
-        const project = {
-            id: crypto.randomUUID(),
-            title,
-            category,
-            description,
-        };
-
         await saveFavoriteProject(project);
 
-        setCategoryFilter("");
+        favoriteButton.textContent =
+            "★ Agregado a favoritos";
 
-        router.render({
-    showSkeleton: false,
-    scrollToTop: false,
-});
+        favoriteButton.disabled = true;
 
         return;
     }
 
-    // Formulario de búsqueda de noticias
-    if (event.target.id === "news-search-form") {
-        event.preventDefault();
 
-        const formData = new FormData(event.target);
+    document.addEventListener("click", async (event) => {
+  const button = event.target.closest("[data-delete-favorite]");
 
-        const search = String(
-            formData.get("search") || ""
-        ).trim();
+  if (!button) return;
 
-        if (search) {
-            writeStorageItem(
-                "sessionStorage",
-                "newsSearch",
-                search
-            );
-        } else {
-            removeStorageItem(
-                "sessionStorage",
-                "newsSearch"
-            );
-        }
+  event.preventDefault();
+  event.stopPropagation();
 
-        router.render();
+  const projectId = button.dataset.deleteFavorite;
+
+  try {
+    await deleteFavoriteProject(projectId);
+
+    const card = button.closest("[data-favorite-card]");
+    card?.remove();
+
+    const remainingCards = document.querySelectorAll("[data-favorite-card]");
+
+    if (remainingCards.length === 0) {
+      window.location.reload();
     }
+  } catch (error) {
+    console.error("No se pudo eliminar el proyecto favorito:", error);
+  }
 });
 
-document.addEventListener("click", (event) => {
-    const deleteButton = event.target.closest(
-        "[data-delete-project]"
+
+    /*
+     * Botones para limpiar almacenamiento
+     */
+    const clearButton = event.target.closest(
+        "[data-clear-storage]"
     );
 
-    if (deleteButton) {
-        const projectId = deleteButton.dataset.deleteProject;
+    if (!clearButton) {
+        return;
+    }
 
-deleteFavoriteProject(projectId).then(() => {
+    const storageType =
+        clearButton.dataset.clearStorage;
+
+    if (storageType === "local") {
+        removeStorageItem(
+            "localStorage",
+            "app-theme"
+        );
+
+        document.documentElement.dataset.theme =
+            "light";
+    } else if (storageType === "session") {
+        removeStorageItem(
+            "sessionStorage",
+            "newsSearch"
+        );
+    } else if (storageType === "cookie") {
+        deleteCookie("appVisits");
+    }
+
+    await router.render({
+        showSkeleton: false,
+        scrollToTop: false,
+    });
+});
+
+
+// Actualiza la vista cuando cambia el almacenamiento
+window.addEventListener("storage-updated", () => {
     router.render({
         showSkeleton: false,
         scrollToTop: false,
     });
 });
 
-        return;
-    }
-
-    const button = event.target.closest("[data-clear-storage]");
-
-    if (!button) {
-        return;
-    }
-
-    const storageType = button.dataset.clearStorage;
-
-    if (storageType === "local") {
-        removeStorageItem("localStorage", "app-theme");
-        document.documentElement.dataset.theme = "light";
-    } else if (storageType === "session") {
-        removeStorageItem("sessionStorage", "newsSearch");
-    } else if (storageType === "cookie") {
-        deleteCookie("appVisits");
-    }
-
-    router.render();
-});
-
-window.addEventListener("storage-updated", () => {
-    router.render();
-});
-
-document.addEventListener("change", (event) => {
-    if (event.target.id !== "category-filter") {
-        return;
-    }
-
-setCategoryFilter(event.target.value);
-
-router.render({
-    showSkeleton: false,
-    scrollToTop: false,
-});
-});
 
 // Inicia el router
 router.init();

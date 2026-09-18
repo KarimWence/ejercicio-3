@@ -68,8 +68,18 @@ export default async function PublicationDetailView(params) {
         </aside>
       </div>
 
-      <footer class="detail-footer">
-        <a href="/" data-link class="btn-link">← Volver a proyectos</a>
+      <footer class="detail-footer detail-footer--actions">
+        <a href="/" data-link class="btn-link">
+          ← Volver a proyectos
+        </a>
+
+        <button
+          type="button"
+          class="favorite-button"
+          data-add-favorite="${publication.id}"
+        >
+          ☆ Agregar a favoritos
+        </button>
       </footer>
     </article>
   `;
