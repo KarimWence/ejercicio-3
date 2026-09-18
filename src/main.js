@@ -5,7 +5,9 @@ import AboutView from "./views/AboutView.js";
 import PublicationDetailView from "./views/ItemDetailView.js";
 import NewsView from "./views/NewsView.js";
 import DiagnosticsView from "./views/DiagnosticsView.js";
-import FavoritesView from "./views/FavoritesView.js";
+import FavoritesView, {
+    setFavoritesCategory,
+} from "./views/FavoritesView.js";
 
 import {
     saveFavoriteProject,
@@ -105,6 +107,24 @@ document.addEventListener("submit", async (event) => {
 });
 
 
+document.addEventListener("change", async (event) => {
+    const categoryFilter = event.target.closest(
+        "#favorites-category-filter"
+    );
+
+    if (!categoryFilter) {
+        return;
+    }
+
+    setFavoritesCategory(categoryFilter.value);
+
+    await router.render({
+        showSkeleton: false,
+        scrollToTop: false,
+    });
+});
+
+
 // Botones y acciones
 document.addEventListener("click", async (event) => {
     /*
@@ -139,37 +159,33 @@ document.addEventListener("click", async (event) => {
             "★ Agregado a favoritos";
 
         favoriteButton.disabled = true;
+        favoriteButton.setAttribute("aria-pressed", "true");
 
         return;
     }
 
 
-    document.addEventListener("click", async (event) => {
-  const button = event.target.closest("[data-delete-favorite]");
+        const button = event.target.closest("[data-delete-favorite]");
 
-  if (!button) return;
+        if (button) {
+                event.preventDefault();
+                event.stopPropagation();
 
-  event.preventDefault();
-  event.stopPropagation();
+                const projectId = button.dataset.deleteFavorite;
 
-  const projectId = button.dataset.deleteFavorite;
+                try {
+                        await deleteFavoriteProject(projectId);
 
-  try {
-    await deleteFavoriteProject(projectId);
+                        await router.render({
+                                showSkeleton: false,
+                                scrollToTop: false,
+                        });
+                } catch (error) {
+                        console.error("No se pudo eliminar el proyecto favorito:", error);
+                }
 
-    const card = button.closest("[data-favorite-card]");
-    card?.remove();
-
-    const remainingCards = document.querySelectorAll("[data-favorite-card]");
-
-    if (remainingCards.length === 0) {
-      window.location.reload();
+                return;
     }
-  } catch (error) {
-    console.error("No se pudo eliminar el proyecto favorito:", error);
-  }
-});
-
 
     /*
      * Botones para limpiar almacenamiento

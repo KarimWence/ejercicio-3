@@ -2,6 +2,8 @@
 // Renderiza el detalle de una publicacion de forma asincrona
 // importando dinamicamente itemsService.js
 
+import { isFavoriteProject } from "../services/dbService.js";
+
 export default async function PublicationDetailView(params) {
   // Importacion dinamica del servicio bajo demanda
   const { default: PublicationsService } = await import(
@@ -20,6 +22,12 @@ export default async function PublicationDetailView(params) {
       </div>
     `;
   }
+
+  const isFavorite = await isFavoriteProject(publication.id);
+  const favoriteButtonLabel = isFavorite
+    ? "★ Agregado a favoritos"
+    : "☆ Agregar a favoritos";
+  const favoriteButtonState = isFavorite ? " disabled aria-disabled=\"true\"" : "";
 
   return `
     <article class="card detail-card">
@@ -77,8 +85,10 @@ export default async function PublicationDetailView(params) {
           type="button"
           class="favorite-button"
           data-add-favorite="${publication.id}"
+          aria-pressed="${isFavorite}"
+          ${favoriteButtonState}
         >
-          ☆ Agregar a favoritos
+          ${favoriteButtonLabel}
         </button>
       </footer>
     </article>
