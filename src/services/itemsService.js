@@ -5,6 +5,7 @@ const PUBLICATIONS = [
   {
     id: "1",
     title: "Huertos urbanos comunitarios",
+    category: "Medio ambiente",
     description:
       "Proyecto enfocado en desarrollar huertos urbanos comunitarios para promover el acceso a alimentos saludables y fomentar la participacion de la comunidad.",
     problem:
@@ -20,6 +21,7 @@ const PUBLICATIONS = [
   {
     id: "2",
     title: "Plataforma de apoyo educativo",
+    category: "Educación",
     description:
       "Iniciativa para desarrollar una plataforma digital que facilite el acceso a recursos educativos y apoye el aprendizaje colaborativo entre estudiantes.",
     problem:
@@ -35,6 +37,7 @@ const PUBLICATIONS = [
   {
     id: "3",
     title: "Sistema de reciclaje universitario",
+    category: "Medio ambiente",
     description:
       "Proyecto orientado a mejorar la separacion y recoleccion de residuos dentro de la comunidad universitaria mediante una solucion tecnologica.",
     problem:
@@ -50,6 +53,7 @@ const PUBLICATIONS = [
   {
     id: "4",
     title: "Red de colaboracion comunitaria",
+    category: "Participación ciudadana",
     description:
       "Iniciativa que busca conectar estudiantes, docentes y organizaciones para colaborar en proyectos destinados a resolver problematicas sociales.",
     problem:
