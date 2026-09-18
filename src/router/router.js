@@ -77,27 +77,42 @@ export default class Router {
   // Skeleton de carga que se muestra mientras el router resuelve la vista
 
 
-  async render() {
+async render(options = {}) {
+    const {
+        showSkeleton = true,
+        scrollToTop = true,
+    } = options;
+
     const path = window.location.pathname;
 
-    // Mostrar skeleton inmediatamente dentro de #app
-   this.root.replaceChildren(createSkeleton());
+    if (showSkeleton) {
+        this.root.replaceChildren(createSkeleton());
+    }
 
     const match = this.matchRoute(path);
 
     if (!match) {
-      const { default: NotFoundView } = await import(
-        "../views/NotFoundView.js"
-      );
-      this.root.innerHTML = NotFoundView();
-      return;
+        const { default: NotFoundView } = await import(
+            "../views/NotFoundView.js"
+        );
+
+        this.root.innerHTML = NotFoundView();
+        return;
     }
 
     const html = await match.route.view(match.params);
+
     this.root.innerHTML = html;
+
     document.title = `Red Social Academica - ${path}`;
-    window.scrollTo({ top: 0, behavior: "instant" });
-  }
+
+    if (scrollToTop) {
+        window.scrollTo({
+            top: 0,
+            behavior: "smooth",
+        });
+    }
+}
 
   init() {
     this.render();

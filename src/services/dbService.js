@@ -1,7 +1,7 @@
 import { openDB } from "https://cdn.jsdelivr.net/npm/idb@8/+esm";
 
 const DB_NAME = 'academicNetworkDB';
-const DB_VERSION = 1;
+const DB_VERSION = 3;
 const STORE_NAME = 'favoriteProjects';
 
 const dbPromise = openDB(DB_NAME, DB_VERSION, {
