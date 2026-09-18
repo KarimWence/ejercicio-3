@@ -14,7 +14,7 @@ export default function PublicationCard(publication) {
       <p class="card-ods"><strong>ODS:</strong> ${publication.ods.join(", ")}</p>
       <div class="card-footer">
         <small class="card-meta">Creado por: ${publication.creator} · ${publication.members} integrantes</small>
-        <a href="/item/${publication.id}" data-link class="card-link">Ver proyecto →</a>
+        <a href="#/item/${publication.id}" data-link class="card-link">Ver proyecto →</a>
       </div>
     </article>
   `;

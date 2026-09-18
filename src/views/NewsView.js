@@ -82,7 +82,7 @@ export default async function NewsView() {
           <code>${error.message}</code>
         </details>
 
-        <a href="/noticias" data-link class="error-card__button">
+        <a href="#/noticias" data-link class="error-card__button">
           Intentar de nuevo
         </a>
       </div>

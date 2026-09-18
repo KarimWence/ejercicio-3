@@ -12,6 +12,7 @@ export default class Router {
 
     // Escucha la navegacion de atras/adelante del navegador
     window.addEventListener("popstate", () => this.render());
+    window.addEventListener("hashchange", () => this.render());
 
     // Intercepta clics en enlaces internos marcados con data-link
     document.addEventListener("click", (event) => {
@@ -24,14 +25,25 @@ export default class Router {
 
   // Navega a una ruta sin recargar la pagina
   navigate(path) {
+    const normalizedPath = path.replace(/^#/, "").replace(/\/+$/, "") || "/";
+
     // Si estamos en la misma página, vuelve a cargar su contenido
-    if (path === window.location.pathname) {
+    if (normalizedPath === this.getCurrentPath()) {
       this.render();
       return;
     }
 
-    window.history.pushState({}, "", path);
-    this.render();
+    window.location.hash = normalizedPath;
+  }
+
+  getCurrentPath() {
+    const hashPath = window.location.hash.slice(1);
+
+    if (hashPath) {
+      return hashPath.replace(/\/+$/, "") || "/";
+    }
+
+    return window.location.pathname.replace(/\/+$/, "") || "/";
   }
 
   // Compara la ruta actual con las rutas registradas (soporta :id)
@@ -77,13 +89,13 @@ export default class Router {
   // Skeleton de carga que se muestra mientras el router resuelve la vista
 
 
-async render(options = {}) {
+  async render(options = {}) {
     const {
         showSkeleton = true,
         scrollToTop = true,
     } = options;
 
-    const path = window.location.pathname;
+    const path = this.getCurrentPath();
 
     if (showSkeleton) {
         this.root.replaceChildren(createSkeleton());
@@ -100,9 +112,21 @@ async render(options = {}) {
         return;
     }
 
-    const html = await match.route.view(match.params);
+    try {
+      const html = await match.route.view(match.params);
 
-    this.root.innerHTML = html;
+      this.root.innerHTML = html;
+    } catch (error) {
+      console.error("No se pudo cargar la vista:", error);
+
+      this.root.innerHTML = `
+        <section class="favorites-empty">
+          <h2>No se pudo cargar esta página</h2>
+          <p>Recarga la página para intentarlo nuevamente.</p>
+          <a href="#/" data-link class="btn-link">Volver al inicio</a>
+        </section>
+      `;
+    }
 
     document.title = `Red Social Academica - ${path}`;
 

@@ -16,14 +16,14 @@ export default async function PublicationDetailView(params) {
       <div class="card empty-card">
         <h2>Proyecto no encontrado</h2>
         <p>No se encontro ningun proyecto con el identificador <code>${params?.id ?? "desconocido"}</code>.</p>
-        <p><a href="/" data-link class="btn-link">← Volver al inicio</a></p>
+        <p><a href="#/" data-link class="btn-link">← Volver al inicio</a></p>
       </div>
     `;
   }
 
   return `
     <article class="card detail-card">
-      <a href="/" data-link class="btn-back">← Volver al catalogo</a>
+      <a href="#/" data-link class="btn-back">← Volver al catalogo</a>
       
       <header class="detail-header">
         <span class="status-badge">${publication.status} · ${publication.progress}% avance</span>
@@ -69,7 +69,7 @@ export default async function PublicationDetailView(params) {
       </div>
 
       <footer class="detail-footer detail-footer--actions">
-        <a href="/" data-link class="btn-link">
+        <a href="#/" data-link class="btn-link">
           ← Volver a proyectos
         </a>
 
