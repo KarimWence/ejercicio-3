@@ -1,5 +1,6 @@
 import Router from "./router/router.js";
 import { deleteFavoriteProject } from "./services/dbService.js";
+import { registerServiceWorker } from "./pwa/registerSW.js";
 import HomeView from "./views/HomeView.js";
 import AboutView from "./views/AboutView.js";
 import PublicationDetailView from "./views/ItemDetailView.js";
@@ -254,3 +255,5 @@ window.addEventListener("storage-updated", () => {
 
 // Inicia el router
 router.init();
+
+window.addEventListener("load", () => registerServiceWorker());

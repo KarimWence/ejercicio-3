@@ -1,0 +1,44 @@
+# Node / JS
+node_modules/
+.npm/
+pnpm-debug.log*
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+
+# Build output
+/dist/
+/build/
+/.cache/
+/.parcel-cache/
+/.vite/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# OS / editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+*.tmp
+
+# Logs
+logs/
+*.log
+
+# PWA / service worker caches
+sw.js.map
+*.tsbuildinfo
+
+# Optional: local coverage/test artifacts
+coverage/
+.nyc_output/
+
+# If using npm workspaces or local tool caches
+.pnpm-store/
