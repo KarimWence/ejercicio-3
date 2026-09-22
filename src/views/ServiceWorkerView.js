@@ -1,3 +1,7 @@
+/*
+ * Obtiene el Service Worker disponible
+ * dentro del registro.
+ */
 function getCurrentWorker(registration) {
   if (!registration) {
     return null;
@@ -12,6 +16,9 @@ function getCurrentWorker(registration) {
 }
 
 
+/*
+ * Traduce el estado del Service Worker.
+ */
 function translateWorkerState(worker) {
   if (!worker) {
     return "No disponible";
@@ -29,7 +36,14 @@ function translateWorkerState(worker) {
 }
 
 
-function createDiagnosticRow(label, value, status) {
+/*
+ * Crea un renglón del diagnóstico.
+ */
+function createDiagnosticRow(
+  label,
+  value,
+  status
+) {
   return `
     <div class="worker-diagnostic-row">
       <span class="worker-diagnostic-label">
@@ -50,7 +64,8 @@ function createDiagnosticRow(label, value, status) {
 
 
 /*
- * Comprueba si una dirección pertenece al scope.
+ * Comprueba si una dirección pertenece
+ * al scope del Service Worker.
  */
 function isRouteInsideScope(route, scope) {
   if (!scope) {
@@ -65,23 +80,18 @@ function isRouteInsideScope(route, scope) {
 
     const scopeUrl = new URL(scope);
 
-    /*
-     * Primero verifica que las dos direcciones
-     * pertenezcan al mismo origen.
-     */
     const sameOrigin =
       routeUrl.origin === scopeUrl.origin;
 
-    /*
-     * Después comprueba que la ruta comience
-     * con la ruta establecida en el scope.
-     */
     const pathInsideScope =
       routeUrl.pathname.startsWith(
         scopeUrl.pathname
       );
 
-    return sameOrigin && pathInsideScope;
+    return (
+      sameOrigin &&
+      pathInsideScope
+    );
   } catch (error) {
     console.error(
       "No se pudo verificar la ruta:",
@@ -105,10 +115,14 @@ function createScopeRow(routeData, scope) {
 
   return `
     <tr>
-      <td>${routeData.type}</td>
+      <td>
+        ${routeData.type}
+      </td>
 
       <td>
-        <code>${routeData.display}</code>
+        <code>
+          ${routeData.display}
+        </code>
       </td>
 
       <td>
@@ -135,7 +149,8 @@ function createScopeRow(routeData, scope) {
 
 
 /*
- * Crea la tabla completa con las rutas solicitadas.
+ * Crea la tabla completa con las rutas
+ * solicitadas por la actividad.
  */
 function createScopeTable(scope) {
   const projectRootWithoutSlash =
@@ -164,8 +179,9 @@ function createScopeTable(scope) {
     },
     {
       type: "Ruta fuera del proyecto",
-      url: "https://example.com/fuera-del-proyecto",
-      display: "https://example.com/fuera-del-proyecto",
+      url: "https://github.com/KarimWence/ejercicio-3",
+      display:
+        "https://github.com/KarimWence/ejercicio-3",
     },
   ];
 
@@ -183,7 +199,10 @@ function createScopeTable(scope) {
         <tbody>
           ${routes
             .map((route) =>
-              createScopeRow(route, scope)
+              createScopeRow(
+                route,
+                scope
+              )
             )
             .join("")}
         </tbody>
@@ -193,6 +212,116 @@ function createScopeTable(scope) {
 }
 
 
+/*
+ * Intenta registrar el Service Worker ubicado
+ * dentro de /src/ utilizando el scope /.
+ */
+async function testInvalidScope() {
+  const output = document.getElementById(
+    "invalid-scope-result"
+  );
+
+  const button = document.querySelector(
+    "[data-test-invalid-scope]"
+  );
+
+  if (!output || !button) {
+    return;
+  }
+
+  const originalButtonContent =
+    button.innerHTML;
+
+  if (!("serviceWorker" in navigator)) {
+    output.textContent =
+      "El navegador no soporta Service Workers.";
+
+    output.className =
+      "invalid-scope-result invalid-scope-result--error";
+
+    return;
+  }
+
+  button.disabled = true;
+
+  button.innerHTML = `
+    <span
+      class="invalid-scope-button__spinner"
+      aria-hidden="true"
+    ></span>
+
+    <span>
+      Probando scope...
+    </span>
+  `;
+
+  output.textContent =
+    "Intentando registrar /src/sw.js con el scope /...";
+
+  output.className =
+    "invalid-scope-result invalid-scope-result--loading";
+
+  try {
+    const registration =
+      await navigator.serviceWorker.register(
+        "/src/sw.js",
+        {
+          scope: "/",
+        }
+      );
+
+    /*
+     * Si el servidor autorizó el scope,
+     * eliminamos el registro experimental.
+     */
+    await registration.unregister();
+
+    output.textContent =
+      "El navegador aceptó el scope. Es posible que el servidor autorice scopes más amplios mediante Service-Worker-Allowed. El registro experimental fue eliminado.";
+
+    output.className =
+      "invalid-scope-result invalid-scope-result--warning";
+  } catch (error) {
+    /*
+     * Este es el resultado esperado.
+     */
+    output.textContent =
+      `Error esperado: ${error.name}: ${error.message}`;
+
+    output.className =
+      "invalid-scope-result invalid-scope-result--success";
+  } finally {
+    button.disabled = false;
+
+    button.innerHTML =
+      originalButtonContent;
+  }
+}
+
+
+/*
+ * Detecta el botón para probar
+ * el scope inválido.
+ */
+document.addEventListener(
+  "click",
+  async (event) => {
+    const button = event.target.closest(
+      "[data-test-invalid-scope]"
+    );
+
+    if (!button) {
+      return;
+    }
+
+    await testInvalidScope();
+  }
+);
+
+
+/*
+ * Vista principal.
+ */
 export default async function ServiceWorkerView() {
   const supportsServiceWorker =
     "serviceWorker" in navigator;
@@ -239,7 +368,9 @@ export default async function ServiceWorkerView() {
 
         ${createDiagnosticRow(
           "¿El navegador soporta Service Workers?",
-          supportsServiceWorker ? "Sí" : "No",
+          supportsServiceWorker
+            ? "Sí"
+            : "No",
           supportsServiceWorker
             ? "success"
             : "error"
@@ -247,7 +378,9 @@ export default async function ServiceWorkerView() {
 
         ${createDiagnosticRow(
           "¿Contexto seguro?",
-          secureContext ? "Sí" : "No",
+          secureContext
+            ? "Sí"
+            : "No",
           secureContext
             ? "success"
             : "error"
@@ -255,7 +388,9 @@ export default async function ServiceWorkerView() {
 
         ${createDiagnosticRow(
           "¿Service Worker registrado?",
-          registration ? "Sí" : "No",
+          registration
+            ? "Sí"
+            : "No",
           registration
             ? "success"
             : "error"
@@ -271,7 +406,8 @@ export default async function ServiceWorkerView() {
 
         ${createDiagnosticRow(
           "URL del script",
-          worker?.scriptURL || "No disponible",
+          worker?.scriptURL ||
+            "No disponible",
           worker
             ? "information"
             : "inactive"
@@ -287,7 +423,9 @@ export default async function ServiceWorkerView() {
 
         ${createDiagnosticRow(
           "¿Controla esta página?",
-          controlsPage ? "Sí" : "No",
+          controlsPage
+            ? "Sí"
+            : "No",
           controlsPage
             ? "success"
             : "inactive"
@@ -332,6 +470,52 @@ export default async function ServiceWorkerView() {
             </div>
           `
       }
+    </section>
+
+
+    <section class="card invalid-scope-card">
+      <p class="hero__eyebrow">
+        Experimento
+      </p>
+
+      <h3>
+        Scope inválido a propósito
+      </h3>
+
+      <p>
+        Este experimento intenta registrar el archivo
+        <code>/src/sw.js</code> utilizando el scope
+        <code>/</code>.
+      </p>
+
+      <p>
+        El navegador debería rechazar el registro porque
+        el scope solicitado se encuentra por encima de la
+        carpeta donde está ubicado el Service Worker.
+      </p>
+
+      <button
+        type="button"
+        class="invalid-scope-button"
+        data-test-invalid-scope
+      >
+        <span
+          class="invalid-scope-button__icon"
+          aria-hidden="true"
+        >
+          ⚠
+        </span>
+
+        <span>
+          Probar scope inválido
+        </span>
+      </button>
+
+      <p
+        id="invalid-scope-result"
+        class="invalid-scope-result"
+        aria-live="polite"
+      ></p>
     </section>
   `;
 }
