@@ -11,7 +11,7 @@ const PROJECT_CATEGORIES = [
   "Participación ciudadana",
   "Salud",
 ];
-
+//Roberto Vega Hernandez
 let selectedCategory = "";
 
 export function setFavoritesCategory(category) {
