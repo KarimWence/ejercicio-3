@@ -1,16 +1,7 @@
 import Router from "./router/router.js";
-import { deleteFavoriteProject } from "./services/dbService.js";
-import { registerServiceWorker } from "./pwa/registerSW.js";
-import HomeView from "./views/HomeView.js";
-import AboutView from "./views/AboutView.js";
-import PublicationDetailView from "./views/ItemDetailView.js";
-import NewsView from "./views/NewsView.js";
-import DiagnosticsView from "./views/DiagnosticsView.js";
-import FavoritesView, {
-    setFavoritesCategory,
-} from "./views/FavoritesView.js";
 
 import {
+    deleteFavoriteProject,
     saveFavoriteProject,
 } from "./services/dbService.js";
 
@@ -27,7 +18,19 @@ import {
 import {
     initializeTheme,
 } from "./utils/theme.js";
+
 import { showFeedback } from "./utils/feedback.js";
+
+import HomeView from "./views/HomeView.js";
+import AboutView from "./views/AboutView.js";
+import ServiceWorkerView from "./views/ServiceWorkerView.js";
+import PublicationDetailView from "./views/ItemDetailView.js";
+import NewsView from "./views/NewsView.js";
+import DiagnosticsView from "./views/DiagnosticsView.js";
+
+import FavoritesView, {
+    setFavoritesCategory,
+} from "./views/FavoritesView.js";
 
 
 const routes = [
@@ -52,6 +55,10 @@ const routes = [
         view: DiagnosticsView,
     },
     {
+        path: "/service-worker",
+        view: ServiceWorkerView,
+    },
+    {
         path: "/item/:id",
         view: PublicationDetailView,
     },
@@ -59,14 +66,50 @@ const routes = [
 
 
 const app = document.getElementById("app");
+
 const router = new Router(routes, app);
 
 
-// Recupera y aplica el tema guardado
+/*
+ * Registro del Service Worker
+ */
+if ("serviceWorker" in navigator) {
+    window.addEventListener("load", async () => {
+        try {
+            await navigator.serviceWorker.register("/sw.js");
+
+            /*
+             * Si el usuario está en la vista del Service Worker,
+             * la actualiza después de terminar el registro.
+             */
+            if (
+                window.location.pathname ===
+                "/service-worker"
+            ) {
+                await router.render({
+                    showSkeleton: false,
+                    scrollToTop: false,
+                });
+            }
+        } catch (error) {
+            console.error(
+                "Error al registrar el Service Worker:",
+                error
+            );
+        }
+    });
+}
+
+
+/*
+ * Recupera y aplica el tema guardado
+ */
 initializeTheme();
 
 
-// Registra la visita del usuario
+/*
+ * Registra la visita del usuario
+ */
 const visitCount = registerVisit();
 
 console.log(
@@ -74,9 +117,13 @@ console.log(
 );
 
 
-// Formularios
+/*
+ * Formularios
+ */
 document.addEventListener("submit", async (event) => {
-    // Formulario de búsqueda de noticias
+    /*
+     * Formulario de búsqueda de noticias
+     */
     if (event.target.id !== "news-search-form") {
         return;
     }
@@ -109,6 +156,9 @@ document.addEventListener("submit", async (event) => {
 });
 
 
+/*
+ * Filtro de categorías de favoritos
+ */
 document.addEventListener("change", async (event) => {
     const categoryFilter = event.target.closest(
         "#favorites-category-filter"
@@ -127,8 +177,27 @@ document.addEventListener("change", async (event) => {
 });
 
 
-// Botones y acciones
+/*
+ * Botones y acciones
+ */
 document.addEventListener("click", async (event) => {
+    /*
+     * Actualizar el diagnóstico del Service Worker
+     */
+    const refreshWorkerButton = event.target.closest(
+        "[data-refresh-worker]"
+    );
+
+    if (refreshWorkerButton) {
+        await router.render({
+            showSkeleton: false,
+            scrollToTop: false,
+        });
+
+        return;
+    }
+
+
     /*
      * Agregar un proyecto a favoritos
      */
@@ -141,17 +210,25 @@ document.addEventListener("click", async (event) => {
             favoriteButton.dataset.addFavorite;
 
         const { default: PublicationsService } =
-            await import("./services/itemsService.js");
+            await import(
+                "./services/itemsService.js"
+            );
 
-        const service = new PublicationsService();
+        const service =
+            new PublicationsService();
 
-        const project = await service.getById(projectId);
+        const project =
+            await service.getById(projectId);
 
         if (!project) {
             console.error(
                 `No se encontró el proyecto con ID: ${projectId}`
             );
-            showFeedback("No se encontró el proyecto solicitado.", "error");
+
+            showFeedback(
+                "No se encontró el proyecto solicitado.",
+                "error"
+            );
 
             return;
         }
@@ -163,11 +240,22 @@ document.addEventListener("click", async (event) => {
                 "★ Agregado a favoritos";
 
             favoriteButton.disabled = true;
-            favoriteButton.setAttribute("aria-pressed", "true");
 
-            showFeedback("Proyecto agregado a favoritos.", "success");
+            favoriteButton.setAttribute(
+                "aria-pressed",
+                "true"
+            );
+
+            showFeedback(
+                "Proyecto agregado a favoritos.",
+                "success"
+            );
         } catch (error) {
-            console.error("No se pudo guardar el proyecto favorito:", error);
+            console.error(
+                "No se pudo guardar el proyecto favorito:",
+                error
+            );
+
             showFeedback(
                 "No se pudo guardar en favoritos. Comprueba el almacenamiento de tu navegador e inténtalo de nuevo.",
                 "error"
@@ -178,36 +266,50 @@ document.addEventListener("click", async (event) => {
     }
 
 
-        const button = event.target.closest("[data-delete-favorite]");
+    /*
+     * Eliminar un proyecto de favoritos
+     */
+    const deleteFavoriteButton = event.target.closest(
+        "[data-delete-favorite]"
+    );
 
-        if (button) {
-                event.preventDefault();
-                event.stopPropagation();
+    if (deleteFavoriteButton) {
+        event.preventDefault();
+        event.stopPropagation();
 
-                const projectId = button.dataset.deleteFavorite;
+        const projectId =
+            deleteFavoriteButton.dataset.deleteFavorite;
 
-                try {
-                        await deleteFavoriteProject(projectId);
+        try {
+            await deleteFavoriteProject(projectId);
 
-                        await router.render({
-                                showSkeleton: false,
-                                scrollToTop: false,
-                        });
+            await router.render({
+                showSkeleton: false,
+                scrollToTop: false,
+            });
 
-                        showFeedback("Proyecto eliminado de favoritos.", "success");
-                } catch (error) {
-                        console.error("No se pudo eliminar el proyecto favorito:", error);
-                        showFeedback(
-                            "No se pudo eliminar de favoritos. Inténtalo nuevamente.",
-                            "error"
-                        );
-                }
+            showFeedback(
+                "Proyecto eliminado de favoritos.",
+                "success"
+            );
+        } catch (error) {
+            console.error(
+                "No se pudo eliminar el proyecto favorito:",
+                error
+            );
 
-                return;
+            showFeedback(
+                "No se pudo eliminar de favoritos. Inténtalo nuevamente.",
+                "error"
+            );
+        }
+
+        return;
     }
 
+
     /*
-     * Botones para limpiar almacenamiento
+     * Limpiar almacenamiento
      */
     const clearButton = event.target.closest(
         "[data-clear-storage]"
@@ -244,7 +346,9 @@ document.addEventListener("click", async (event) => {
 });
 
 
-// Actualiza la vista cuando cambia el almacenamiento
+/*
+ * Actualiza la vista cuando cambia el almacenamiento
+ */
 window.addEventListener("storage-updated", () => {
     router.render({
         showSkeleton: false,
@@ -253,7 +357,7 @@ window.addEventListener("storage-updated", () => {
 });
 
 
-// Inicia el router
+/*
+ * Inicia el router
+ */
 router.init();
-
-window.addEventListener("load", () => registerServiceWorker());

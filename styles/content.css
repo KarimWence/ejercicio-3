@@ -1357,3 +1357,278 @@ html[data-theme="dark"] .toast--success {
         max-width: none;
     }
 }
+
+
+.worker-diagnostic-card {
+  max-width: 58rem;
+  margin-inline: auto;
+  gap: 1.5rem;
+}
+
+.worker-diagnostic-list {
+  display: grid;
+}
+
+.worker-diagnostic-row {
+  display: grid;
+  grid-template-columns: minmax(15rem, 1fr) minmax(0, 1.4fr);
+  gap: 1rem;
+  align-items: center;
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--theme-border);
+}
+
+.worker-diagnostic-row:first-child {
+  padding-top: 0;
+}
+
+.worker-diagnostic-row:last-child {
+  border-bottom: none;
+}
+
+.worker-diagnostic-label {
+  color: var(--theme-text);
+  font-weight: 700;
+}
+
+.worker-diagnostic-value {
+  display: inline-block;
+  width: fit-content;
+  max-width: 100%;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  overflow-wrap: anywhere;
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.worker-diagnostic-value--success {
+  color: #155d38;
+  background-color: #dff5e8;
+}
+
+.worker-diagnostic-value--error {
+  color: #8b1e1e;
+  background-color: #fde4e4;
+}
+
+.worker-diagnostic-value--information {
+  color: var(--theme-text);
+  background-color: var(--theme-background);
+}
+
+.worker-diagnostic-value--inactive {
+  color: var(--theme-text-soft);
+  background-color: var(--theme-background);
+}
+
+@media (max-width: 42em) {
+  .worker-diagnostic-row {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+}
+
+/* =========================================
+   VERIFICADOR DE SCOPE
+   ========================================= */
+
+.scope-section {
+  margin-top: 2.5rem;
+}
+
+.scope-section__header {
+  margin-bottom: 1.25rem;
+}
+
+.scope-section__header h3 {
+  margin: 0 0 0.5rem;
+  color: var(--theme-text);
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+}
+
+.scope-section__header p {
+  color: var(--theme-text-soft);
+}
+
+.scope-table-container {
+  width: 100%;
+  overflow-x: auto;
+  background-color: var(--theme-surface);
+  border: 1px solid var(--theme-border);
+  border-radius: var(--radius);
+  box-shadow: var(--theme-shadow);
+}
+
+.scope-table {
+  width: 100%;
+  min-width: 48rem;
+  border-collapse: collapse;
+}
+
+.scope-table th,
+.scope-table td {
+  padding: 1rem;
+  border-bottom: 1px solid var(--theme-border);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.scope-table th {
+  color: var(--theme-text);
+  background-color: var(--theme-surface-soft);
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.scope-table td {
+  color: var(--theme-text-soft);
+}
+
+.scope-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.scope-table tbody tr:hover {
+  background-color: var(--theme-surface-soft);
+}
+
+.scope-table code {
+  color: var(--theme-text);
+  font-family: Consolas, Monaco, monospace;
+  overflow-wrap: anywhere;
+}
+
+.scope-result {
+  display: inline-block;
+  padding: 0.4rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.scope-result--inside {
+  color: #155d38;
+  background-color: #dff5e8;
+}
+
+.scope-result--outside {
+  color: #8b1e1e;
+  background-color: #fde4e4;
+}
+
+.scope-empty {
+  color: var(--theme-text-soft);
+}
+
+/* =========================================
+   DIAGNÓSTICO DEL SERVICE WORKER
+   ========================================= */
+
+.sw-diagnostic-card,
+.scope-verifier-card {
+  margin-bottom: 2rem;
+}
+
+.sw-status-list {
+  display: grid;
+}
+
+.sw-status-row {
+  display: grid;
+  grid-template-columns:
+    minmax(16rem, 1fr)
+    minmax(0, 1.4fr);
+  gap: 1rem;
+  align-items: center;
+  padding: 1rem 0;
+  border-bottom:
+    1px solid var(--theme-border);
+}
+
+.sw-status-row:last-child {
+  border-bottom: none;
+}
+
+.sw-status-row code {
+  overflow-wrap: anywhere;
+}
+
+.sw-result {
+  display: inline-block;
+  width: fit-content;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.sw-result--positive {
+  color: #155d38;
+  background-color: #dff5e8;
+}
+
+.sw-result--negative {
+  color: #8b1e1e;
+  background-color: #fde4e4;
+}
+
+.sw-result--information {
+  color: var(--theme-text);
+  background-color:
+    var(--theme-surface-soft);
+}
+
+
+/* =========================================
+   TABLA DEL SCOPE
+   ========================================= */
+
+.scope-table-container {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.scope-table {
+  width: 100%;
+  min-width: 46rem;
+  border-collapse: collapse;
+}
+
+.scope-table th,
+.scope-table td {
+  padding: 1rem;
+  border-bottom:
+    1px solid var(--theme-border);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.scope-table th {
+  color: var(--theme-text);
+  background-color:
+    var(--theme-surface-soft);
+}
+
+.scope-table td {
+  color: var(--theme-text-soft);
+}
+
+.scope-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.scope-table code {
+  color: var(--theme-text);
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 42em) {
+  .sw-status-row {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+}
