@@ -1,4 +1,5 @@
 import Router from "./router/router.js";
+import { registerServiceWorker } from "./pwa/registerSW.js";
 
 import {
     deleteFavoriteProject,
@@ -73,32 +74,16 @@ const router = new Router(routes, app);
 /*
  * Registro del Service Worker
  */
-if ("serviceWorker" in navigator) {
-    window.addEventListener("load", async () => {
-        try {
-            await navigator.serviceWorker.register("/sw.js");
+window.addEventListener("load", async () => {
+    const registration = await registerServiceWorker();
 
-            /*
-             * Si el usuario está en la vista del Service Worker,
-             * la actualiza después de terminar el registro.
-             */
-            if (
-                window.location.pathname ===
-                "/service-worker"
-            ) {
-                await router.render({
-                    showSkeleton: false,
-                    scrollToTop: false,
-                });
-            }
-        } catch (error) {
-            console.error(
-                "Error al registrar el Service Worker:",
-                error
-            );
-        }
-    });
-}
+    if (registration) {
+        console.log(
+            "[PWA] Service Worker listo:",
+            registration.scope
+        );
+    }
+});
 
 
 /*

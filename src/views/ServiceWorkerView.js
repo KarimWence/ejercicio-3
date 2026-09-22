@@ -1,3 +1,7 @@
+import { BASE_PATH, withBasePath,} from "../config.js";
+
+import {SW_URL, SW_SCOPE,} from "../pwa/registerSW.js";
+
 /*
  * Obtiene el Service Worker disponible
  * dentro del registro.
@@ -153,29 +157,46 @@ function createScopeRow(routeData, scope) {
  * solicitadas por la actividad.
  */
 function createScopeTable(scope) {
-  const projectRootWithoutSlash =
-    window.location.origin;
+  
+  const appRoot =
+    withBasePath("");
+
+  const appRootWithoutSlash =
+    appRoot.length > 1
+      ? appRoot.replace(/\/$/, "")
+      : appRoot;
+
+ 
+  const parentScope =
+    BASE_PATH === "/"
+      ? "/"
+      : BASE_PATH.slice(
+          0,
+          BASE_PATH
+            .slice(0, -1)
+            .lastIndexOf("/") + 1
+        );
 
   const routes = [
     {
-      type: "Raíz del proyecto",
-      url: "/",
-      display: "/",
+      type: "Raíz de la app",
+      url: appRoot,
+      display: appRoot,
     },
     {
       type: "Ruta del router",
-      url: "/service-worker",
-      display: "/service-worker",
+      url: withBasePath("service-worker"),
+      display: withBasePath("service-worker"),
     },
     {
       type: "Archivo interno",
-      url: "/src/main.js",
-      display: "/src/main.js",
+      url: withBasePath("src/main.js"),
+      display: withBasePath("src/main.js"),
     },
     {
       type: "Raíz sin diagonal final",
-      url: projectRootWithoutSlash,
-      display: projectRootWithoutSlash,
+      url: appRootWithoutSlash,
+      display: appRootWithoutSlash,
     },
     {
       type: "Ruta fuera del proyecto",
@@ -242,6 +263,11 @@ async function testInvalidScope() {
     return;
   }
 
+  const invalidWorkerUrl = withBasePath("src/sw.js");
+
+  const requestedScope = SW_SCOPE;
+
+
   button.disabled = true;
 
   button.innerHTML = `
@@ -256,7 +282,8 @@ async function testInvalidScope() {
   `;
 
   output.textContent =
-    "Intentando registrar /src/sw.js con el scope /...";
+    `Intentando registrar ${invalidWorkerUrl} ` +
+    `con el scope ${requestedScope}...`;
 
   output.className =
     "invalid-scope-result invalid-scope-result--loading";
@@ -264,9 +291,9 @@ async function testInvalidScope() {
   try {
     const registration =
       await navigator.serviceWorker.register(
-        "/src/sw.js",
+        invalidWorkerUrl,
         {
-          scope: "/",
+          scope: requestedScope,
         }
       );
 
@@ -333,7 +360,7 @@ export default async function ServiceWorkerView() {
 
   if (supportsServiceWorker) {
     registration =
-      await navigator.serviceWorker.getRegistration();
+      await navigator.serviceWorker.getRegistration(SW_SCOPE);
   }
 
   const worker =
@@ -407,7 +434,11 @@ export default async function ServiceWorkerView() {
         ${createDiagnosticRow(
           "URL del script",
           worker?.scriptURL ||
-            "No disponible",
+            new URL(
+              SW_URL,
+              window.location.origin
+            ).href,
+
           worker
             ? "information"
             : "inactive"
@@ -484,8 +515,11 @@ export default async function ServiceWorkerView() {
 
       <p>
         Este experimento intenta registrar el archivo
-        <code>/src/sw.js</code> utilizando el scope
-        <code>/</code>.
+        <code> ${withBasePath("src/sw.js")}</code>
+
+        utilizando el scope
+    
+        <code>${SW_SCOPE}</code>.
       </p>
 
       <p>
