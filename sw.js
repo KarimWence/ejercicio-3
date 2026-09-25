@@ -1,15 +1,35 @@
-console.log("[SW] Script en ejecución");
+const CACHE_VERSION = "proyectos-ods-app-shell-v1";
 
-console.log("[SW] Contexto global: ", self.constructor.name);
+const APP_SHELL = [
+  "./",
+  "./index.html",
+  "./styles/main.css",
+  "./styles/shell.css",
+  "./styles/content.css",
+  "./src/main.js",
+];
 
-//No tiene acceso
-console.log("[SW] typeof window => ", typeof window);
-console.log("[SW] typeof document => ", typeof document);
-console.log("[SW] typeof localStorage => ", typeof localStorage);
+self.addEventListener("install", (event) => {
+  console.log("[SW] install => precacheando", CACHE_VERSION);
 
-//Sí tiene acceso
-console.log("[SW] typeof indexedDB => ", typeof indexedDB);
-console.log("[SW] typeof caches => ", typeof caches);
+  event.waitUntil(caches.open(CACHE_VERSION).then((cache) => cache.addAll(APP_SHELL)));
 
-//Scope del service worker
-console.log("[SW] Scope => ", self.registration.scope);
+});
+
+self.addEventListener("activate", (event) => {
+  console.log("[SW] activate => versión activa", CACHE_VERSION);
+
+  event.waitUntil(
+    caches.keys().then((cacheNames) =>Promise.all(
+        cacheNames.map((cacheName) => {
+          if (cacheName !== CACHE_VERSION) {
+            console.log("[SW] Borrando caché vieja", cacheName);
+            return caches.delete(cacheName);
+          }
+
+          return undefined;
+        })
+      )
+    )
+  );
+});
