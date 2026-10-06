@@ -33,3 +33,33 @@ self.addEventListener("activate", (event) => {
     )
   );
 });
+
+self.addEventListener("fetch", (event) => {
+  const { request } = event;
+
+  // Solo GET es seguro de responder desde caché; otros métodos pueden modificar datos.
+  if (request.method !== "GET") {
+    return;
+  }
+
+  const requestUrl = new URL(request.url);
+
+  // No gestionamos recursos externos para no alterar solicitudes fuera de esta app.
+  if (requestUrl.origin !== self.location.origin) {
+    return;
+  }
+
+  event.respondWith(
+    caches.open(CACHE_VERSION).then((cache) =>
+      cache.match(request).then((cachedResponse) => {
+        if (cachedResponse) {
+          console.log("[SW] HIT", request.url);
+          return cachedResponse;
+        }
+
+        console.log("[SW] MISS", request.url);
+        return fetch(request);
+      })
+    )
+  );
+});
