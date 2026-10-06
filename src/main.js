@@ -21,6 +21,7 @@ import {
 } from "./utils/theme.js";
 
 import { showFeedback } from "./utils/feedback.js";
+import "./utils/cacheDebug.js";
 
 import HomeView from "./views/HomeView.js";
 import AboutView from "./views/AboutView.js";
@@ -335,6 +336,16 @@ document.addEventListener("click", async (event) => {
  * Actualiza la vista cuando cambia el almacenamiento
  */
 window.addEventListener("storage-updated", () => {
+    router.render({
+        showSkeleton: false,
+        scrollToTop: false,
+    });
+});
+
+/*
+ * Actualiza la vista cuando cambia la caché (Cache API)
+ */
+window.addEventListener("cache-updated", () => {
     router.render({
         showSkeleton: false,
         scrollToTop: false,
