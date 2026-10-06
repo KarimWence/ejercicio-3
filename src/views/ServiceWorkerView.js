@@ -1,6 +1,14 @@
 import { BASE_PATH, withBasePath,} from "../config.js";
-
-import {SW_URL, SW_SCOPE,} from "../pwa/registerSW.js";
+import { SW_URL, SW_SCOPE } from "../pwa/registerSW.js";
+import { showFeedback } from "../utils/feedback.js";
+import {
+  listCacheEntries,
+  deleteCacheEntry,
+  seedOutdatedExperimentData,
+  fetchExperimentResource,
+  getActiveCache,
+  EXPERIMENT_REL_URL,
+} from "../utils/cacheDebug.js";
 
 /*
  * Obtiene el Service Worker disponible
@@ -327,21 +335,202 @@ async function testInvalidScope() {
 
 
 /*
- * Detecta el botón para probar
- * el scope inválido.
+ * Tabla con el contenido de la caché.
+ */
+function createCacheTable(entries, activeCacheName) {
+  if (!entries || entries.length === 0) {
+    return `
+      <div class="card scope-empty">
+        No hay recursos guardados en la caché actual.
+      </div>
+    `;
+  }
+
+  return `
+    <div style="margin-bottom: 0.75rem;">
+      <button type="button" class="diagnostic-button" data-refresh-cache>
+        Actualizar lista
+      </button>
+    </div>
+
+    <div class="scope-table-container">
+      <table class="scope-table">
+        <thead>
+          <tr>
+            <th>Tipo</th>
+            <th>Recurso</th>
+            <th>Acción</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${entries
+            .map(
+              (entry) => `
+            <tr>
+              <td>
+                <span class="cache-badge ${
+                  entry.type.includes("Precache")
+                    ? "cache-badge--precache"
+                    : "cache-badge--runtime"
+                }">
+                  ${entry.type}
+                </span>
+              </td>
+              <td>
+                <code>${entry.pathname}</code>
+              </td>
+              <td>
+                <button
+                  type="button"
+                  class="btn-delete-cache"
+                  data-delete-cache-entry="${entry.url}"
+                >
+                  Eliminar
+                </button>
+              </td>
+            </tr>
+          `
+            )
+            .join("")}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+/*
+ * Experimento de dato desactualizado.
+ */
+function createExperimentSection() {
+  return `
+    <section class="card">
+      <p class="hero__eyebrow">
+        Experimento
+      </p>
+
+      <h3>
+        Dato guardado que ya cambió
+      </h3>
+
+      <p>
+        Demuestra cómo la caché entrega un dato anterior (HIT) aunque en el servidor haya cambiado,
+        hasta que se borra de la caché con <code>cache.delete()</code> y se consulta de nuevo a la red (MISS).
+      </p>
+
+      <div class="experiment-actions">
+        <button type="button" class="diagnostic-button" data-exp-fetch>
+          Consultar dato
+        </button>
+
+        <button type="button" class="diagnostic-button" data-exp-seed-stale>
+          Simular dato viejo en caché
+        </button>
+
+        <button type="button" class="btn-delete-cache" data-exp-delete>
+          Borrar dato de caché
+        </button>
+      </div>
+
+      <div id="experiment-result-container" class="experiment-output">
+        <p>Presiona <strong>Consultar dato</strong> para ver el valor actual.</p>
+      </div>
+    </section>
+  `;
+}
+
+/*
+ * Consulta el recurso y muestra el resultado en pantalla de forma simple.
+ */
+async function runExperimentFetch() {
+  const container = document.getElementById("experiment-result-container");
+  if (!container) return;
+
+  container.innerHTML = `<p>Consultando recurso...</p>`;
+
+  try {
+    const result = await fetchExperimentResource();
+    const isStale = result.data?.version === 1;
+
+    container.innerHTML = `
+      <p><strong>Origen:</strong> ${result.source}</p>
+      <p><strong>Estado:</strong> ${isStale ? "Dato desactualizado (Versión 1)" : "Dato actualizado (Versión 2)"}</p>
+      <p><strong>Título:</strong> ${result.data?.titulo || ""}</p>
+      <p><strong>Mensaje:</strong> ${result.data?.mensaje || ""}</p>
+      <p><strong>Versión:</strong> ${result.data?.version}</p>
+    `;
+  } catch (error) {
+    container.innerHTML = `<p style="color: #991b1b;">Error al consultar: ${error.message}</p>`;
+  }
+}
+
+/*
+ * Detecta clics en los botones de la vista.
  */
 document.addEventListener(
   "click",
   async (event) => {
-    const button = event.target.closest(
-      "[data-test-invalid-scope]"
-    );
-
-    if (!button) {
+    // Probar scope inválido
+    const scopeBtn = event.target.closest("[data-test-invalid-scope]");
+    if (scopeBtn) {
+      await testInvalidScope();
       return;
     }
 
-    await testInvalidScope();
+    // Eliminar entrada individual de la caché con cache.delete()
+    const deleteBtn = event.target.closest("[data-delete-cache-entry]");
+    if (deleteBtn) {
+      const url = deleteBtn.dataset.deleteCacheEntry;
+      deleteBtn.disabled = true;
+      deleteBtn.textContent = "Borrando...";
+      const success = await deleteCacheEntry(url);
+      if (success) {
+        showFeedback("Entrada eliminada de la caché.", "success");
+      }
+      return;
+    }
+
+    // Refrescar lista de caché
+    const refreshCacheBtn = event.target.closest("[data-refresh-cache]");
+    if (refreshCacheBtn) {
+      window.dispatchEvent(new CustomEvent("cache-updated"));
+      showFeedback("Lista de caché actualizada.", "info");
+      return;
+    }
+
+    // Experimento: Inyectar versión desactualizada (v1)
+    const seedBtn = event.target.closest("[data-exp-seed-stale]");
+    if (seedBtn) {
+      seedBtn.disabled = true;
+      await seedOutdatedExperimentData();
+      showFeedback("Dato anterior guardado en caché.", "info");
+      await runExperimentFetch();
+      seedBtn.disabled = false;
+      return;
+    }
+
+    // Experimento: Consultar recurso
+    const fetchBtn = event.target.closest("[data-exp-fetch]");
+    if (fetchBtn) {
+      fetchBtn.disabled = true;
+      await runExperimentFetch();
+      fetchBtn.disabled = false;
+      return;
+    }
+
+    // Experimento: Eliminar entrada del experimento
+    const expDeleteBtn = event.target.closest("[data-exp-delete]");
+    if (expDeleteBtn) {
+      expDeleteBtn.disabled = true;
+      const targetUrl = new URL(withBasePath(EXPERIMENT_REL_URL), window.location.origin).href;
+      await deleteCacheEntry(targetUrl);
+      showFeedback("Dato eliminado de la caché.", "success");
+      const container = document.getElementById("experiment-result-container");
+      if (container) {
+        container.innerHTML = `<p>Entrada eliminada. Presiona "Consultar dato" para traer la versión fresca de la red.</p>`;
+      }
+      expDeleteBtn.disabled = false;
+      return;
+    }
   }
 );
 
@@ -372,6 +561,10 @@ export default async function ServiceWorkerView() {
 
   const scope =
     registration?.scope || null;
+
+  // Requisito 5: Obtener la caché activa y listar sus entradas actuales
+  const activeCache = await getActiveCache();
+  const cacheEntries = await listCacheEntries();
 
   return `
     <section class="hero">
@@ -551,5 +744,23 @@ export default async function ServiceWorkerView() {
         aria-live="polite"
       ></p>
     </section>
+
+    <section class="card">
+      <p class="hero__eyebrow">
+        Caché
+      </p>
+
+      <h3>
+        Contenido de la caché
+      </h3>
+
+      <p>
+        Lista de recursos almacenados en la versión activa (<code>${activeCache?.name || "sin caché"}</code>).
+      </p>
+
+      ${createCacheTable(cacheEntries, activeCache?.name)}
+    </section>
+
+    ${createExperimentSection()}
   `;
 }
