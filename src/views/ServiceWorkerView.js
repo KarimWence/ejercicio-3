@@ -6,8 +6,12 @@ import {
   deleteCacheEntry,
   seedOutdatedExperimentData,
   fetchExperimentResource,
+  fetchNetworkFirstResource,
+  fetchSwrResource,
   getActiveCache,
   EXPERIMENT_REL_URL,
+  NETWORK_FIRST_REL_URL,
+  SWR_REL_URL,
 } from "../utils/cacheDebug.js";
 
 /*
@@ -399,64 +403,115 @@ function createCacheTable(entries, activeCacheName) {
 }
 
 /*
- * Experimento de dato desactualizado.
+ * Sección de pruebas de estrategias de caché (Network First y SWR).
  */
 function createExperimentSection() {
   return `
     <section class="card">
       <p class="hero__eyebrow">
-        Experimento
+        Estrategia 1 · Network First
       </p>
 
       <h3>
-        Dato guardado que ya cambió
+        Prueba de Network First (Pruebas 3 y 4)
       </h3>
 
       <p>
-        Demuestra cómo la caché entrega un dato anterior (HIT) aunque en el servidor haya cambiado,
-        hasta que se borra de la caché con <code>cache.delete()</code> y se consulta de nuevo a la red (MISS).
+        Aplica a <code>data/dato-experimento.json</code> y a la API externa. Prioriza la red para obtener el dato más reciente; si la red falla o está en modo Offline, devuelve la copia en caché.
       </p>
 
       <div class="experiment-actions">
-        <button type="button" class="diagnostic-button" data-exp-fetch>
-          Consultar dato
+        <button type="button" class="diagnostic-button" data-exp-nf-fetch>
+          Consultar con Network First
         </button>
 
-        <button type="button" class="diagnostic-button" data-exp-seed-stale>
-          Simular dato viejo en caché
-        </button>
-
-        <button type="button" class="btn-delete-cache" data-exp-delete>
+        <button type="button" class="btn-delete-cache" data-exp-nf-delete>
           Borrar dato de caché
         </button>
       </div>
 
-      <div id="experiment-result-container" class="experiment-output">
-        <p>Presiona <strong>Consultar dato</strong> para ver el valor actual.</p>
+      <div id="exp-network-first-output" class="experiment-output">
+        <p>Presiona <strong>Consultar con Network First</strong> para probar la respuesta con red u offline.</p>
+      </div>
+    </section>
+
+    <section class="card" style="margin-top: 1.5rem;">
+      <p class="hero__eyebrow">
+        Estrategia 2 · Stale-While-Revalidate
+      </p>
+
+      <h3>
+        Prueba de SWR (Prueba 5)
+      </h3>
+
+      <p>
+        Aplica a <code>data/dato-experimento-2.json</code>. Devuelve la versión en caché inmediatamente (HIT instantáneo) y lanza una petición a la red en segundo plano para actualizar la caché.
+      </p>
+
+      <div class="experiment-actions">
+        <button type="button" class="diagnostic-button" data-exp-swr-fetch>
+          Consultar con SWR
+        </button>
+
+        <button type="button" class="diagnostic-button" data-exp-seed-stale>
+          Simular versión vieja en caché
+        </button>
+
+        <button type="button" class="btn-delete-cache" data-exp-swr-delete>
+          Borrar dato de caché
+        </button>
+      </div>
+
+      <div id="exp-swr-output" class="experiment-output">
+        <p>Presiona <strong>Consultar con SWR</strong> para verificar la entrega inmediata y revalidación asíncrona.</p>
       </div>
     </section>
   `;
 }
 
 /*
- * Consulta el recurso y muestra el resultado en pantalla de forma simple.
+ * Consulta el recurso de Network First.
  */
-async function runExperimentFetch() {
-  const container = document.getElementById("experiment-result-container");
+async function runNetworkFirstFetch() {
+  const container = document.getElementById("exp-network-first-output");
   if (!container) return;
 
   container.innerHTML = `<p>Consultando recurso...</p>`;
 
   try {
-    const result = await fetchExperimentResource();
-    const isStale = result.data?.version === 1;
-
+    const result = await fetchNetworkFirstResource();
     container.innerHTML = `
       <p><strong>Origen:</strong> ${result.source}</p>
-      <p><strong>Estado:</strong> ${isStale ? "Dato desactualizado (Versión 1)" : "Dato actualizado (Versión 2)"}</p>
+      <p><strong>Versión:</strong> ${result.data?.version ?? "N/A"}</p>
       <p><strong>Título:</strong> ${result.data?.titulo || ""}</p>
       <p><strong>Mensaje:</strong> ${result.data?.mensaje || ""}</p>
-      <p><strong>Versión:</strong> ${result.data?.version}</p>
+      <p><strong>Actualizado:</strong> ${result.data?.actualizado || ""}</p>
+    `;
+  } catch (error) {
+    container.innerHTML = `<p style="color: #991b1b;">Error al consultar: ${error.message}</p>`;
+  }
+}
+
+/*
+ * Consulta el recurso de SWR.
+ */
+async function runSwrFetch() {
+  const container = document.getElementById("exp-swr-output");
+  if (!container) return;
+
+  container.innerHTML = `<p>Consultando recurso...</p>`;
+
+  try {
+    const result = await fetchSwrResource();
+    container.innerHTML = `
+      <p><strong>Origen:</strong> ${result.source}</p>
+      <p><strong>Versión:</strong> ${result.data?.version ?? "N/A"}</p>
+      <p><strong>Título:</strong> ${result.data?.titulo || ""}</p>
+      <p><strong>Mensaje:</strong> ${result.data?.mensaje || ""}</p>
+      <p><strong>Actualizado:</strong> ${result.data?.actualizado || ""}</p>
+      <small style="display: block; margin-top: 0.5rem; color: var(--ink-soft);">
+        La 1.ª consulta entrega la copia en caché y revalida en red; la 2.ª consulta muestra el dato nuevo.
+      </small>
     `;
   } catch (error) {
     container.innerHTML = `<p style="color: #991b1b;">Error al consultar: ${error.message}</p>`;
@@ -497,38 +552,62 @@ document.addEventListener(
       return;
     }
 
-    // Experimento: Inyectar versión desactualizada (v1)
+    // Network First: Consultar
+    const nfFetchBtn = event.target.closest("[data-exp-nf-fetch]");
+    if (nfFetchBtn) {
+      nfFetchBtn.disabled = true;
+      await runNetworkFirstFetch();
+      nfFetchBtn.disabled = false;
+      return;
+    }
+
+    // Network First: Borrar de caché
+    const nfDeleteBtn = event.target.closest("[data-exp-nf-delete]");
+    if (nfDeleteBtn) {
+      nfDeleteBtn.disabled = true;
+      const targetUrl = new URL(withBasePath(NETWORK_FIRST_REL_URL), window.location.origin).href;
+      await deleteCacheEntry(targetUrl);
+      showFeedback("Entrada de Network First eliminada de caché.", "success");
+      const container = document.getElementById("exp-network-first-output");
+      if (container) {
+        container.innerHTML = `<p>Entrada eliminada de la caché. Al consultar en modo con red se descargará nuevamente.</p>`;
+      }
+      nfDeleteBtn.disabled = false;
+      return;
+    }
+
+    // SWR: Consultar
+    const swrFetchBtn = event.target.closest("[data-exp-swr-fetch]");
+    if (swrFetchBtn) {
+      swrFetchBtn.disabled = true;
+      await runSwrFetch();
+      swrFetchBtn.disabled = false;
+      return;
+    }
+
+    // SWR: Simular versión previa (v1)
     const seedBtn = event.target.closest("[data-exp-seed-stale]");
     if (seedBtn) {
       seedBtn.disabled = true;
       await seedOutdatedExperimentData();
-      showFeedback("Dato anterior guardado en caché.", "info");
-      await runExperimentFetch();
+      showFeedback("Versión previa inyectada en caché (v1).", "info");
+      await runSwrFetch();
       seedBtn.disabled = false;
       return;
     }
 
-    // Experimento: Consultar recurso
-    const fetchBtn = event.target.closest("[data-exp-fetch]");
-    if (fetchBtn) {
-      fetchBtn.disabled = true;
-      await runExperimentFetch();
-      fetchBtn.disabled = false;
-      return;
-    }
-
-    // Experimento: Eliminar entrada del experimento
-    const expDeleteBtn = event.target.closest("[data-exp-delete]");
-    if (expDeleteBtn) {
-      expDeleteBtn.disabled = true;
-      const targetUrl = new URL(withBasePath(EXPERIMENT_REL_URL), window.location.origin).href;
+    // SWR: Borrar de caché
+    const swrDeleteBtn = event.target.closest("[data-exp-swr-delete]");
+    if (swrDeleteBtn) {
+      swrDeleteBtn.disabled = true;
+      const targetUrl = new URL(withBasePath(SWR_REL_URL), window.location.origin).href;
       await deleteCacheEntry(targetUrl);
-      showFeedback("Dato eliminado de la caché.", "success");
-      const container = document.getElementById("experiment-result-container");
+      showFeedback("Entrada de SWR eliminada de caché.", "success");
+      const container = document.getElementById("exp-swr-output");
       if (container) {
-        container.innerHTML = `<p>Entrada eliminada. Presiona "Consultar dato" para traer la versión fresca de la red.</p>`;
+        container.innerHTML = `<p>Entrada eliminada. Presiona "Consultar con SWR" para obtener la versión fresca.</p>`;
       }
-      expDeleteBtn.disabled = false;
+      swrDeleteBtn.disabled = false;
       return;
     }
   }

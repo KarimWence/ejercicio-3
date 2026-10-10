@@ -20,6 +20,8 @@ import {
     initializeTheme,
 } from "./utils/theme.js";
 
+import { initializeConnectivity } from "./utils/connectivity.js";
+
 import { showFeedback } from "./utils/feedback.js";
 import "./utils/cacheDebug.js";
 
@@ -91,6 +93,11 @@ window.addEventListener("load", async () => {
  * Recupera y aplica el tema guardado
  */
 initializeTheme();
+
+/*
+ * Inicializa la detección de conectividad (indicador offline/online)
+ */
+initializeConnectivity();
 
 
 /*

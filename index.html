@@ -76,6 +76,20 @@
 </button>
 </header>
 
+  <!-- Banner de estado de conectividad (Offline First) -->
+  <aside
+    id="networkStatusBanner"
+    class="network-banner network-banner--offline"
+    role="status"
+    aria-live="polite"
+    hidden
+  >
+    <span class="network-banner__dot" aria-hidden="true"></span>
+    <span id="networkStatusMessage" class="network-banner__message">
+      Modo sin conexión · Navegando con recursos locales guardados en caché.
+    </span>
+  </aside>
+
   <!-- CONTENEDOR RAIZ: El router solo reemplaza lo que hay dentro de #app.
        Incluye el skeleton inicial en el HTML estatico del App Shell para que
        sea visible de inmediato mientras el JavaScript carga y resuelve la ruta. -->

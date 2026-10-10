@@ -3,8 +3,10 @@
 
 import { withBasePath } from "../config.js";
 
-export const CACHE_VERSION = "proyectos-ods-app-shell-v2";
-export const EXPERIMENT_REL_URL = "data/dato-experimento-2.json";
+export const CACHE_VERSION = "proyectos-ods-app-shell-v3";
+export const NETWORK_FIRST_REL_URL = "data/dato-experimento.json";
+export const SWR_REL_URL = "data/dato-experimento-2.json";
+export const EXPERIMENT_REL_URL = SWR_REL_URL;
 
 // Obtiene la caché activa
 export async function getActiveCache() {
@@ -127,9 +129,30 @@ export async function seedOutdatedExperimentData() {
   }
 }
 
-// Consulta el recurso de prueba y reporta de dónde vino
+// Consulta el recurso de prueba (compatibilidad)
 export async function fetchExperimentResource() {
-  const targetUrl = new URL(withBasePath(EXPERIMENT_REL_URL), window.location.origin).href;
+  return fetchSwrResource();
+}
+
+// Consulta el recurso asignado a Network First
+export async function fetchNetworkFirstResource() {
+  const targetUrl = new URL(withBasePath(NETWORK_FIRST_REL_URL), window.location.origin).href;
+  const isOnline = navigator.onLine;
+
+  const response = await fetch(withBasePath(NETWORK_FIRST_REL_URL));
+  const data = await response.json();
+
+  return {
+    url: targetUrl,
+    data,
+    source: isOnline ? "Red (Network First prioritario)" : "Caché local (Network First fallback)",
+    isOnline,
+  };
+}
+
+// Consulta el recurso asignado a Stale-While-Revalidate
+export async function fetchSwrResource() {
+  const targetUrl = new URL(withBasePath(SWR_REL_URL), window.location.origin).href;
   const active = await getActiveCache();
 
   let wasInCache = false;
@@ -138,15 +161,13 @@ export async function fetchExperimentResource() {
     wasInCache = Boolean(matched);
   }
 
-  const response = await fetch(withBasePath(EXPERIMENT_REL_URL));
+  const response = await fetch(withBasePath(SWR_REL_URL));
   const data = await response.json();
-
-  const source = wasInCache ? "Caché (SW HIT)" : "Red (SW MISS)";
 
   return {
     url: targetUrl,
     data,
-    source,
+    source: wasInCache ? "Caché instantánea (revalidando en segundo plano)" : "Red directa",
     wasInCache,
   };
 }
@@ -163,5 +184,7 @@ if (typeof window !== "undefined") {
     delete: deleteCacheEntry,
     seedStale: seedOutdatedExperimentData,
     fetchExperiment: fetchExperimentResource,
+    fetchNetworkFirst: fetchNetworkFirstResource,
+    fetchSwr: fetchSwrResource,
   };
 }

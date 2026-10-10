@@ -7,7 +7,7 @@ console.log("[SW] typeof indexedDB =>", typeof indexedDB);
 console.log("[SW] typeof caches =>", typeof caches);
 console.log("[SW] Scope =>", self.registration.scope);
 
-const CACHE_VERSION = "proyectos-ods-app-shell-v2";
+const CACHE_VERSION = "proyectos-ods-app-shell-v3";
 const API_ORIGIN = "https://api.spaceflightnewsapi.net";
 const CDN_ORIGIN = "https://cdn.jsdelivr.net";
 const ALLOWED_ORIGINS = [self.location.origin, API_ORIGIN, CDN_ORIGIN];
@@ -30,6 +30,7 @@ const APP_SHELL = [
   "./src/services/dbService.js",
   "./src/services/itemsService.js",
   "./src/utils/cacheDebug.js",
+  "./src/utils/connectivity.js",
   "./src/utils/feedback.js",
   "./src/utils/slugify.js",
   "./src/utils/storage.js",
@@ -42,11 +43,14 @@ const APP_SHELL = [
   "./src/views/NewsView.js",
   "./src/views/NotFoundView.js",
   "./src/views/ServiceWorkerView.js",
+  "./data/dato-experimento.json",
+  "./data/dato-experimento-2.json",
   `${CDN_ORIGIN}/npm/idb@8/+esm`,
 ];
 
 self.addEventListener("install", (event) => {
   console.log("[SW] install => precacheando", CACHE_VERSION);
+  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_VERSION).then((cache) => cache.addAll(APP_SHELL))
   );
@@ -119,12 +123,27 @@ async function handleRequest(event) {
 function pickStrategy(request) {
   const url = new URL(request.url);
 
-  if (request.mode === "navigate") return cacheFirst;
-  if (url.origin === API_ORIGIN) return networkFirst;
+  // 1. Navegación de la SPA (sirve el App Shell index.html)
+  if (request.mode === "navigate") {
+    return cacheFirst;
+  }
+
+  // 2. Datos dinámicos de noticias (API externa)
+  if (url.origin === API_ORIGIN) {
+    return networkFirst;
+  }
+
+  // 3. Recurso local para pruebas de Network First (dato de convocatoria)
+  if (url.pathname.endsWith("/data/dato-experimento.json")) {
+    return networkFirst;
+  }
+
+  // 4. Recurso local para pruebas de Stale-While-Revalidate (dato con revalidación)
   if (url.pathname.endsWith("/data/dato-experimento-2.json")) {
     return staleWhileRevalidate;
   }
 
+  // 5. Todos los demás recursos estáticos del App Shell (CSS, JS, iconos, CDN)
   return cacheFirst;
 }
 

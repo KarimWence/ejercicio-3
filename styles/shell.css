@@ -141,6 +141,66 @@ select {
   }
 }
 
+/* -- Banner de conectividad (Offline First) ----------------- */
+.network-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.625rem;
+  padding: 0.625rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-align: center;
+  border-bottom: 1px solid transparent;
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+.network-banner[hidden] {
+  display: none !important;
+}
+
+.network-banner--offline {
+  background-color: #fef3c7;
+  color: #92400e;
+  border-bottom-color: #fcd34d;
+}
+
+.network-banner--online {
+  background-color: #d1fae5;
+  color: #065f46;
+  border-bottom-color: #a7f3d0;
+}
+
+.network-banner__dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.network-banner--offline .network-banner__dot {
+  background-color: #d97706;
+  box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.2);
+}
+
+.network-banner--online .network-banner__dot {
+  background-color: #059669;
+  box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.2);
+}
+
+[data-theme="dark"] .network-banner--offline {
+  background-color: #451a03;
+  color: #fde68a;
+  border-bottom-color: #78350f;
+}
+
+[data-theme="dark"] .network-banner--online {
+  background-color: #064e3b;
+  color: #a7f3d0;
+  border-bottom-color: #047857;
+}
+
 /* -- Contenedor principal (#app) ---------------------------- */
 .app-root {
   flex: 1;
