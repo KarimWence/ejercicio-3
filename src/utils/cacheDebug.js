@@ -3,8 +3,8 @@
 
 import { withBasePath } from "../config.js";
 
-export const CACHE_VERSION = "proyectos-ods-app-shell-v1";
-export const EXPERIMENT_REL_URL = "data/dato-experimento.json";
+export const CACHE_VERSION = "proyectos-ods-app-shell-v2";
+export const EXPERIMENT_REL_URL = "data/dato-experimento-2.json";
 
 // Obtiene la caché activa
 export async function getActiveCache() {
