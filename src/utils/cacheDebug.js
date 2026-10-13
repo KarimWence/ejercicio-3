@@ -3,7 +3,7 @@
 
 import { withBasePath } from "../config.js";
 
-export const CACHE_VERSION = "proyectos-ods-app-shell-v3";
+export const CACHE_VERSION = "proyectos-ods-app-shell-v4";
 export const NETWORK_FIRST_REL_URL = "data/dato-experimento.json";
 export const SWR_REL_URL = "data/dato-experimento-2.json";
 export const EXPERIMENT_REL_URL = SWR_REL_URL;

@@ -7,7 +7,7 @@ console.log("[SW] typeof indexedDB =>", typeof indexedDB);
 console.log("[SW] typeof caches =>", typeof caches);
 console.log("[SW] Scope =>", self.registration.scope);
 
-const CACHE_VERSION = "proyectos-ods-app-shell-v3";
+const CACHE_VERSION = "proyectos-ods-app-shell-v4";
 const API_ORIGIN = "https://api.spaceflightnewsapi.net";
 const CDN_ORIGIN = "https://cdn.jsdelivr.net";
 const ALLOWED_ORIGINS = [self.location.origin, API_ORIGIN, CDN_ORIGIN];
@@ -16,6 +16,15 @@ const APP_SHELL = [
   "./",
   "./index.html",
   "./404.html",
+  "./manifest.json",
+  "./favicon.ico",
+  "./icons/favicon-32x32.png",
+  "./icons/icon-192.png",
+  "./icons/icon-512.png",
+  "./icons/icon-512-maskable.png",
+  "./icons/icon-1024.png",
+  "./icons/apple-touch-icon.png",
+  "./icons/splash-1179x2556.png",
   "./styles/main.css",
   "./styles/shell.css",
   "./styles/content.css",

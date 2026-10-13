@@ -19,6 +19,14 @@ function applyTheme(theme) {
 
     document.documentElement.dataset.theme = validTheme;
 
+    const themeColorMeta = document.querySelector('meta[name="theme-color"]');
+    if (themeColorMeta) {
+        themeColorMeta.setAttribute(
+            "content",
+            validTheme === "dark" ? "#121311" : "#ffffff"
+        );
+    }
+
     if (!themeToggle) {
         return;
     }
