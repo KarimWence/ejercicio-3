@@ -11,6 +11,22 @@
   "orientation": "portrait-primary",
   "theme_color": "#ffffff",
   "background_color": "#f6f4ef",
+"screenshots": [
+  {
+    "src": "screenshots/escritorio.png",
+    "sizes": "1920x911",
+    "type": "image/png",
+    "form_factor": "wide",
+    "label": "Catálogo de proyectos en escritorio"
+  },
+  {
+    "src": "screenshots/movil.png",
+    "sizes": "942x2048",
+    "type": "image/png",
+    "form_factor": "narrow",
+    "label": "Catálogo de proyectos en móvil"
+  }
+],
   "icons": [
     {
       "src": "icons/favicon-32x32.png",
