@@ -1,5 +1,6 @@
 import Router from "./router/router.js";
 import { registerServiceWorker } from "./pwa/registerSW.js";
+import { initializeInstall } from "./pwa/install.js";
 
 import {
     deleteFavoriteProject,
@@ -35,6 +36,11 @@ import DiagnosticsView from "./views/DiagnosticsView.js";
 import FavoritesView, {
     setFavoritesCategory,
 } from "./views/FavoritesView.js";
+
+/*
+ * Inicializa el botón y los eventos de instalación
+ */
+initializeInstall();
 
 
 const routes = [

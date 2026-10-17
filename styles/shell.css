@@ -292,3 +292,141 @@ select {
     background-position: -200% 0;
   }
 }
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.install-control {
+  position: relative;
+}
+
+#installAppButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 10px 18px;
+  border: 1px solid #c48a35;
+  border-radius: 999px;
+  background: #efb354;
+  color: #241b10;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+#installAppButton:hover {
+  background: #ffc46b;
+}
+
+#installAppButton:focus-visible {
+  outline: 3px solid #efb354;
+  outline-offset: 3px;
+}
+
+#installAppButton[hidden] {
+  display: none !important;
+}
+
+#installAppButton svg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+#installAppMessage {
+  display: none;
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 100;
+  width: min(280px, 80vw);
+  margin: 0;
+  padding: 12px 15px;
+  border: 1px solid #ded5c7;
+  border-radius: 12px;
+  background: #fffaf2;
+  color: #332a1e;
+  font-size: 13px;
+  line-height: 1.5;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 15%);
+}
+
+.install-control:hover #installAppMessage,
+.install-control:focus-within #installAppMessage {
+  display: block;
+}
+
+.install-control:has(#installAppButton[hidden]) #installAppMessage {
+  display: block;
+  position: static;
+  width: auto;
+  max-width: 240px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  box-shadow: none;
+  font-size: 12px;
+}
+
+/* Aviso temporal fuera del espacio del header */
+.header-actions .install-control #installAppMessage {
+  display: block;
+  position: fixed;
+  inset: auto 20px 24px auto;
+  z-index: 1000;
+
+  width: min(340px, calc(100vw - 40px));
+  max-width: none;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 14px 18px;
+
+  border: 1px solid #d6a354;
+  border-radius: 14px;
+  background: #fffaf2;
+  color: #332a1e;
+  font-size: 13px;
+  line-height: 1.5;
+  box-shadow: 0 8px 28px rgb(0 0 0 / 16%);
+
+  pointer-events: none;
+  animation: install-notice 5s ease forwards;
+}
+
+.header-actions .install-control:has(#installAppButton[hidden]) {
+  flex: 0 0 auto;
+  max-width: none;
+}
+
+@keyframes install-notice {
+  0% {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  8%, 85% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  100% {
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(8px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .header-actions .install-control #installAppMessage {
+    transform: none;
+  }
+} 
