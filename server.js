@@ -1,5 +1,5 @@
 import http from "node:http";
-import { readFile, stat } from "node:fs/promises";
+import { readFile, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -7,6 +7,8 @@ const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const configuredBase = process.env.BASE_PATH ?? "/";
 const BASE = `/${configuredBase.replace(/^\/+|\/+$/g, "")}`.replace("//", "/") || "/";
 const BASE_URL = BASE === "/" ? "/" : `${BASE}/`;
+const COLLABORATION_API_PATH = `${BASE === "/" ? "" : BASE}/api/collaboration-requests`;
+const COLLABORATION_REQUESTS_FILE = path.join(ROOT, "data", "collaboration-requests.json");
 const PORT = 5501;
 
 const TYPES = {
@@ -20,6 +22,68 @@ const TYPES = {
   ".ico": "image/x-icon",
 };
 
+async function handleCollaborationRequest(req, res) {
+  if (req.method !== "POST") {
+    res.writeHead(405, { Allow: "POST" });
+    return res.end();
+  }
+
+  const chunks = [];
+  let bodySize = 0;
+
+  for await (const chunk of req) {
+    bodySize += chunk.length;
+    if (bodySize > 16_384) {
+      res.writeHead(413);
+      return res.end("Request body too large");
+    }
+    chunks.push(chunk);
+  }
+
+  let requestData;
+  try {
+    requestData = JSON.parse(Buffer.concat(chunks).toString("utf8"));
+  } catch {
+    res.writeHead(400, { "Content-Type": "application/json; charset=utf-8" });
+    return res.end(JSON.stringify({ error: "El cuerpo debe ser JSON válido." }));
+  }
+
+  const requiredFields = ["id", "projectId", "projectTitle", "contactName", "proposal", "createdAt"];
+  const isValid = requestData && requiredFields.every(
+    (field) => typeof requestData[field] === "string" && requestData[field].trim()
+  );
+
+  if (!isValid) {
+    res.writeHead(400, { "Content-Type": "application/json; charset=utf-8" });
+    return res.end(JSON.stringify({ error: "Faltan datos de la propuesta." }));
+  }
+
+  try {
+    let requests = [];
+    try {
+      requests = JSON.parse(await readFile(COLLABORATION_REQUESTS_FILE, "utf8"));
+    } catch (error) {
+      if (error.code !== "ENOENT") throw error;
+    }
+
+    const existingRequest = requests.find((request) => request.id === requestData.id);
+    if (existingRequest) {
+      res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
+      return res.end(JSON.stringify({ id: existingRequest.id, received: true }));
+    }
+
+    requests.push({ ...requestData, receivedAt: new Date().toISOString() });
+    await writeFile(COLLABORATION_REQUESTS_FILE, JSON.stringify(requests, null, 2));
+
+    res.writeHead(201, { "Content-Type": "application/json; charset=utf-8" });
+    return res.end(JSON.stringify({ id: requestData.id, received: true }));
+  } catch (error) {
+    console.error("No se pudo guardar la propuesta:", error);
+    res.writeHead(500, { "Content-Type": "application/json; charset=utf-8" });
+    return res.end(JSON.stringify({ error: "No se pudo guardar la propuesta." }));
+  }
+}
+
 http
   .createServer(async (req, res) => {
     const { pathname } = new URL(req.url, `http://${req.headers.host}`);
@@ -31,6 +95,10 @@ http
     if (BASE !== "/" && !pathname.startsWith(`${BASE}/`)) {
       res.writeHead(404);
       return res.end("Not found");
+    }
+
+    if (pathname === COLLABORATION_API_PATH) {
+      return handleCollaborationRequest(req, res);
     }
 
     const rel = decodeURIComponent(pathname.slice(BASE.length));

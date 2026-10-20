@@ -7,7 +7,7 @@ console.log("[SW] typeof indexedDB =>", typeof indexedDB);
 console.log("[SW] typeof caches =>", typeof caches);
 console.log("[SW] Scope =>", self.registration.scope);
 
-const CACHE_VERSION = "proyectos-ods-app-shell-v7";
+const CACHE_VERSION = "proyectos-ods-app-shell-v8";
 const API_ORIGIN = "https://api.spaceflightnewsapi.net";
 const CDN_ORIGIN = "https://cdn.jsdelivr.net";
 const ALLOWED_ORIGINS = [self.location.origin, API_ORIGIN, CDN_ORIGIN];
@@ -46,6 +46,7 @@ const APP_SHELL = [
   "./src/utils/theme.js",
   "./src/views/AboutView.js",
   "./src/views/DiagnosticsView.js",
+  "./src/views/CollaborationView.js",
   "./src/views/FavoritesView.js",
   "./src/views/HomeView.js",
   "./src/views/ItemDetailView.js",

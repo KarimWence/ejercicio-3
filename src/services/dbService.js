@@ -1,8 +1,9 @@
 import { openDB } from "https://cdn.jsdelivr.net/npm/idb@8/+esm";
 
 const DB_NAME = 'academicNetworkDB';
-const DB_VERSION = 4;
+const DB_VERSION = 5;
 const STORE_NAME = 'favoriteProjects';
+const OUTBOX_STORE = 'outbox';
 
 const dbPromise = openDB(DB_NAME, DB_VERSION, {
   upgrade(db, oldVersion, newVersion, transaction) {
@@ -12,13 +13,22 @@ const dbPromise = openDB(DB_NAME, DB_VERSION, {
       });
 
       store.createIndex('category', 'category');
-      return;
+    } else {
+      const store = transaction.objectStore(STORE_NAME);
+
+      if (!store.indexNames.contains('category')) {
+        store.createIndex('category', 'category');
+      }
     }
 
-    const store = transaction.objectStore(STORE_NAME);
+    if (!db.objectStoreNames.contains(OUTBOX_STORE)) {
+      const outbox = db.createObjectStore(OUTBOX_STORE, {
+        keyPath: 'id',
+      });
 
-    if (!store.indexNames.contains('category')) {
-      store.createIndex('category', 'category');
+      outbox.createIndex('type', 'type');
+      outbox.createIndex('status', 'status');
+      outbox.createIndex('createdAt', 'createdAt');
     }
   },
 });
@@ -54,4 +64,16 @@ export async function deleteFavoriteProject(id) {
   const db = await dbPromise;
 
   return db.delete(STORE_NAME, id);
+}
+
+export async function enqueueOutboxItem(item) {
+  const db = await dbPromise;
+
+  return db.add(OUTBOX_STORE, item);
+}
+
+export async function getOutboxItems() {
+  const db = await dbPromise;
+
+  return db.getAll(OUTBOX_STORE);
 }

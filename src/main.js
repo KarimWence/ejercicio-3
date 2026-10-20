@@ -4,8 +4,10 @@ import { initializeInstall } from "./pwa/install.js";
 
 import {
     deleteFavoriteProject,
+    enqueueOutboxItem,
     saveFavoriteProject,
 } from "./services/dbService.js";
+import { withBasePath } from "./config.js";
 
 import {
     deleteCookie,
@@ -32,6 +34,7 @@ import ServiceWorkerView from "./views/ServiceWorkerView.js";
 import PublicationDetailView from "./views/ItemDetailView.js";
 import NewsView from "./views/NewsView.js";
 import DiagnosticsView from "./views/DiagnosticsView.js";
+import CollaborationView from "./views/CollaborationView.js";
 
 import FavoritesView, {
     setFavoritesCategory,
@@ -55,6 +58,10 @@ const routes = [
     {
         path: "/favoritos",
         view: FavoritesView,
+    },
+    {
+        path: "/colaborar",
+        view: CollaborationView,
     },
     {
         path: "/acerca",
@@ -120,6 +127,53 @@ console.log(
  * Formularios
  */
 document.addEventListener("submit", async (event) => {
+    if (event.target.id === "collaboration-form") {
+        event.preventDefault();
+
+        const formData = new FormData(event.target);
+        const projectSelect = event.target.elements.projectId;
+        const id = globalThis.crypto?.randomUUID?.()
+            ?? `proposal-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+        const createdAt = new Date().toISOString();
+
+        try {
+            await enqueueOutboxItem({
+                id,
+                type: "collaboration-request",
+                endpoint: withBasePath("api/collaboration-requests"),
+                method: "POST",
+                status: "pending",
+                createdAt,
+                payload: {
+                    id,
+                    projectId: String(formData.get("projectId")),
+                    projectTitle: projectSelect.selectedOptions[0].textContent.trim(),
+                    contactName: String(formData.get("contactName")).trim(),
+                    proposal: String(formData.get("proposal")).trim(),
+                    createdAt,
+                },
+            });
+
+            await router.render({
+                showSkeleton: false,
+                scrollToTop: false,
+            });
+
+            showFeedback(
+                "Propuesta guardada en este dispositivo; queda pendiente de envío.",
+                "success"
+            );
+        } catch (error) {
+            console.error("No se pudo guardar la propuesta en la cola:", error);
+            showFeedback(
+                "No se pudo guardar la propuesta. Comprueba el almacenamiento del navegador e inténtalo de nuevo.",
+                "error"
+            );
+        }
+
+        return;
+    }
+
     /*
      * Formulario de búsqueda de noticias
      */
