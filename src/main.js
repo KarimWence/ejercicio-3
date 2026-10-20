@@ -7,6 +7,11 @@ import {
     enqueueOutboxItem,
     saveFavoriteProject,
 } from "./services/dbService.js";
+import {
+    registerOutboxSync,
+    retryOutboxNow,
+    supportsBackgroundSync,
+} from "./services/backgroundSync.js";
 import { withBasePath } from "./config.js";
 
 import {
@@ -86,6 +91,53 @@ const app = document.getElementById("app");
 
 const router = new Router(routes, app);
 
+async function refreshAfterOutboxChange() {
+    if (router.getCurrentPath() !== "/colaborar") {
+        return;
+    }
+
+    await router.render({
+        showSkeleton: false,
+        scrollToTop: false,
+    });
+}
+
+async function retryOutboxFallback(showResult = false) {
+    if (!navigator.onLine) {
+        if (showResult) {
+            showFeedback("No hay conexión. Las propuestas siguen pendientes.", "info");
+        }
+        return 0;
+    }
+
+    try {
+        const sentCount = await retryOutboxNow();
+        await refreshAfterOutboxChange();
+
+        if (showResult) {
+            showFeedback(
+                sentCount
+                    ? `${sentCount} propuesta${sentCount === 1 ? "" : "s"} enviada${sentCount === 1 ? "" : "s"}.`
+                    : "No hay propuestas pendientes por enviar.",
+                "success"
+            );
+        }
+
+        return sentCount;
+    } catch (error) {
+        console.warn("[Outbox] No se pudo completar el reintento:", error);
+
+        if (showResult) {
+            showFeedback(
+                "El envío falló. La propuesta permanece en la cola para reintentarse.",
+                "error"
+            );
+        }
+
+        return 0;
+    }
+}
+
 
 /*
  * Registro del Service Worker
@@ -99,6 +151,25 @@ window.addEventListener("load", async () => {
             registration.scope
         );
     }
+
+    if (!supportsBackgroundSync()) {
+        retryOutboxFallback();
+    }
+});
+
+window.addEventListener("online", () => {
+    if (!supportsBackgroundSync()) {
+        retryOutboxFallback();
+    }
+});
+
+navigator.serviceWorker?.addEventListener("message", async (event) => {
+    if (event.data?.type !== "OUTBOX_SYNC_COMPLETED") {
+        return;
+    }
+
+    await refreshAfterOutboxChange();
+    showFeedback("Las propuestas pendientes se enviaron correctamente.", "success");
 });
 
 
@@ -154,13 +225,30 @@ document.addEventListener("submit", async (event) => {
                 },
             });
 
+            let usesBackgroundSync = false;
+            let fallbackSentCount = 0;
+
+            try {
+                usesBackgroundSync = await registerOutboxSync();
+            } catch (error) {
+                console.warn("[Outbox] No se pudo registrar Background Sync:", error);
+            }
+
+            if (!usesBackgroundSync) {
+                fallbackSentCount = await retryOutboxFallback();
+            }
+
             await router.render({
                 showSkeleton: false,
                 scrollToTop: false,
             });
 
             showFeedback(
-                "Propuesta guardada en este dispositivo; queda pendiente de envío.",
+                usesBackgroundSync
+                    ? "Propuesta guardada; se enviará cuando haya conexión."
+                    : fallbackSentCount
+                        ? "Propuesta guardada y enviada correctamente."
+                        : "Propuesta guardada; se reintentará al abrir, recuperar conexión o pulsar el botón.",
                 "success"
             );
         } catch (error) {
@@ -234,6 +322,15 @@ document.addEventListener("change", async (event) => {
  * Botones y acciones
  */
 document.addEventListener("click", async (event) => {
+    const retryOutboxButton = event.target.closest("[data-retry-outbox]");
+
+    if (retryOutboxButton) {
+        retryOutboxButton.disabled = true;
+        await retryOutboxFallback(true);
+        retryOutboxButton.disabled = false;
+        return;
+    }
+
     /*
      * Actualizar el diagnóstico del Service Worker
      */

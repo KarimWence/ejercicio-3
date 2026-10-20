@@ -1093,6 +1093,13 @@ html[data-theme="dark"] .status-badge {
   flex-wrap: wrap;
 }
 
+.outbox-section__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
 .outbox-section__heading h2 {
   margin: 0;
   color: var(--theme-text);

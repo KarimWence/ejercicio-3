@@ -7,7 +7,11 @@ console.log("[SW] typeof indexedDB =>", typeof indexedDB);
 console.log("[SW] typeof caches =>", typeof caches);
 console.log("[SW] Scope =>", self.registration.scope);
 
-const CACHE_VERSION = "proyectos-ods-app-shell-v8";
+const CACHE_VERSION = "proyectos-ods-app-shell-v9";
+const OUTBOX_DB_NAME = "academicNetworkDB";
+const OUTBOX_DB_VERSION = 6;
+const OUTBOX_STORE = "outbox";
+const OUTBOX_SYNC_TAG = "sync-collaboration-outbox";
 const API_ORIGIN = "https://api.spaceflightnewsapi.net";
 const CDN_ORIGIN = "https://cdn.jsdelivr.net";
 const ALLOWED_ORIGINS = [self.location.origin, API_ORIGIN, CDN_ORIGIN];
@@ -34,10 +38,12 @@ const APP_SHELL = [
   "./src/components/ItemCard.js",
   "./src/components/Skeleton.js",
   "./src/pwa/registerSW.js",
+  "./src/pwa/install.js",
   "./src/services/apiService.js",
   "./src/services/cookieService.js",
   "./src/services/dbService.js",
   "./src/services/itemsService.js",
+  "./src/services/outboxService.js",
   "./src/utils/cacheDebug.js",
   "./src/utils/connectivity.js",
   "./src/utils/feedback.js",
@@ -93,6 +99,101 @@ self.addEventListener("message", (event) => {
     event.waitUntil(self.skipWaiting());
   }
 });
+
+self.addEventListener("sync", (event) => {
+  if (event.tag !== OUTBOX_SYNC_TAG) {
+    return;
+  }
+
+  console.log("[SW] sync =>", event.tag);
+  event.waitUntil(syncCollaborationOutbox());
+});
+
+function openOutboxDatabase() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(OUTBOX_DB_NAME, OUTBOX_DB_VERSION);
+
+    request.onupgradeneeded = () => {
+      const db = request.result;
+
+      if (!db.objectStoreNames.contains(OUTBOX_STORE)) {
+        const outbox = db.createObjectStore(OUTBOX_STORE, { keyPath: "id" });
+        outbox.createIndex("type", "type");
+        outbox.createIndex("status", "status");
+        outbox.createIndex("createdAt", "createdAt");
+      }
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function getPendingOutboxItems() {
+  const db = await openOutboxDatabase();
+
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(OUTBOX_STORE, "readonly");
+    const request = transaction.objectStore(OUTBOX_STORE).getAll();
+
+    request.onsuccess = () => {
+      resolve(
+        request.result
+          .filter((item) => item.type === "collaboration-request")
+          .sort((first, second) => first.createdAt.localeCompare(second.createdAt))
+      );
+    };
+    request.onerror = () => reject(request.error);
+    transaction.oncomplete = () => db.close();
+    transaction.onerror = () => reject(transaction.error);
+  });
+}
+
+async function deleteOutboxItem(id) {
+  const db = await openOutboxDatabase();
+
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(OUTBOX_STORE, "readwrite");
+    transaction.objectStore(OUTBOX_STORE).delete(id);
+    transaction.oncomplete = () => {
+      db.close();
+      resolve();
+    };
+    transaction.onerror = () => reject(transaction.error);
+    transaction.onabort = () => reject(transaction.error);
+  });
+}
+
+async function syncCollaborationOutbox() {
+  const pendingItems = await getPendingOutboxItems();
+  let sentCount = 0;
+
+  for (const item of pendingItems) {
+    const response = await fetch(item.endpoint, {
+      method: item.method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(item.payload),
+    });
+
+    if (!response.ok) {
+      throw new Error(`No se pudo enviar ${item.id}: HTTP ${response.status}`);
+    }
+
+    await deleteOutboxItem(item.id);
+    sentCount += 1;
+  }
+
+  if (sentCount) {
+    await notifyOutboxSyncComplete(sentCount);
+  }
+}
+
+async function notifyOutboxSyncComplete(sentCount) {
+  const clients = await self.clients.matchAll({ type: "window" });
+
+  clients.forEach((client) =>
+    client.postMessage({ type: "OUTBOX_SYNC_COMPLETED", sentCount })
+  );
+}
 
 function shouldHandle(request) {
   if (request.method !== "GET") {

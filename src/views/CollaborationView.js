@@ -1,5 +1,6 @@
 import PublicationsService from "../services/itemsService.js";
 import { getOutboxItems } from "../services/dbService.js";
+import { supportsBackgroundSync } from "../services/backgroundSync.js";
 import { withBasePath } from "../config.js";
 
 function escapeHTML(value) {
@@ -22,6 +23,9 @@ export default async function CollaborationView() {
     .filter((item) => item.type === "collaboration-request")
     .sort((first, second) => second.createdAt.localeCompare(first.createdAt));
   const endpoint = withBasePath("api/collaboration-requests");
+  const syncMode = supportsBackgroundSync()
+    ? "Sincronización en segundo plano disponible"
+    : "Modo de reintento al abrir, recuperar conexión o pulsar el botón";
 
   return `
     <header class="hero hero--narrow">
@@ -51,10 +55,20 @@ export default async function CollaborationView() {
       <button type="submit">Guardar propuesta</button>
     </form>
 
+    <p class="collaboration-form__note">
+      <strong>Estado de envío:</strong> ${syncMode}.<br />
+      Endpoint: <code>${endpoint}</code>
+    </p>
+
     <section class="outbox-section" aria-labelledby="outbox-title">
       <div class="outbox-section__heading">
         <h2 id="outbox-title">Cola de propuestas</h2>
-        <span class="outbox-count">${pendingItems.length} pendiente${pendingItems.length === 1 ? "" : "s"}</span>
+        <div class="outbox-section__actions">
+          <span class="outbox-count">${pendingItems.length} pendiente${pendingItems.length === 1 ? "" : "s"}</span>
+          <button type="button" class="diagnostic-button" data-retry-outbox>
+            Reintentar ahora
+          </button>
+        </div>
       </div>
       ${pendingItems.length ? `
         <ul class="outbox-list">

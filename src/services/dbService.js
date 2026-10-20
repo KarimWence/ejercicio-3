@@ -1,7 +1,7 @@
 import { openDB } from "https://cdn.jsdelivr.net/npm/idb@8/+esm";
 
 const DB_NAME = 'academicNetworkDB';
-const DB_VERSION = 5;
+const DB_VERSION = 6;
 const STORE_NAME = 'favoriteProjects';
 const OUTBOX_STORE = 'outbox';
 
@@ -76,4 +76,10 @@ export async function getOutboxItems() {
   const db = await dbPromise;
 
   return db.getAll(OUTBOX_STORE);
+}
+
+export async function deleteOutboxItem(id) {
+  const db = await dbPromise;
+
+  return db.delete(OUTBOX_STORE, id);
 }
