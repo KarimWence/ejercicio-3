@@ -7,7 +7,7 @@ console.log("[SW] typeof indexedDB =>", typeof indexedDB);
 console.log("[SW] typeof caches =>", typeof caches);
 console.log("[SW] Scope =>", self.registration.scope);
 
-const CACHE_VERSION = "proyectos-ods-app-shell-v11";
+const CACHE_VERSION = "proyectos-ods-app-shell-v12";
 const OUTBOX_DB_NAME = "academicNetworkDB";
 const OUTBOX_DB_VERSION = 6;
 const OUTBOX_STORE = "outbox";
@@ -45,6 +45,7 @@ const APP_SHELL = [
   "./src/services/itemsService.js",
   "./src/services/backgroundSync.js",
   "./src/services/geolocationService.js",
+  "./src/services/shareService.js",
   "./src/utils/cacheDebug.js",
   "./src/utils/connectivity.js",
   "./src/utils/feedback.js",

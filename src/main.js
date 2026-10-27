@@ -1,4 +1,5 @@
 import Router from "./router/router.js";
+import { shareProject } from "./services/shareService.js";
 import { registerServiceWorker } from "./pwa/registerSW.js";
 import { initializeInstall } from "./pwa/install.js";
 
@@ -329,6 +330,49 @@ document.addEventListener("change", async (event) => {
  */
 document.addEventListener("click", async (event) => {
     const requestLocationButton = event.target.closest("[data-request-location]");
+
+        const shareButton = event.target.closest("[data-share-project]");
+
+    if (shareButton) {
+        event.preventDefault();
+
+        const article = shareButton.closest(".detail-card");
+        const title = article
+            ?.querySelector(".detail-header h2")
+            ?.textContent.trim() || "Proyecto ODS";
+
+        shareButton.disabled = true;
+
+        try {
+            const result = await shareProject({
+                title,
+                text: `Conoce este proyecto: ${title}`,
+                url: window.location.href,
+            });
+
+            if (result === "shared") {
+                showFeedback(
+                    "Solicitud de compartir completada.",
+                    "success",
+                    2500
+                );
+            } else if (result === "copied") {
+                showFeedback(
+                    "Enlace copiado. Ya puedes pegarlo para compartir.",
+                    "success",
+                    3000
+                );
+            } else if (result === "cancelled") {
+                showFeedback("Compartir cancelado.", "info", 2000);
+            }
+        } catch (error) {
+            showFeedback(error.message, "error");
+        } finally {
+            shareButton.disabled = false;
+        }
+
+        return;
+    }
 
     if (requestLocationButton) {
         const result = document.getElementById("location-request-result");

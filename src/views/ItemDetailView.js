@@ -84,6 +84,14 @@ export default async function PublicationDetailView(params) {
         <button
           type="button"
           class="favorite-button"
+          data-share-project
+        >
+          Compartir proyecto
+        </button>
+
+        <button
+          type="button"
+          class="favorite-button"
           data-add-favorite="${publication.id}"
           aria-pressed="${isFavorite}"
           ${favoriteButtonState}
