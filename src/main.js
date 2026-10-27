@@ -12,6 +12,10 @@ import {
     retryOutboxNow,
     supportsBackgroundSync,
 } from "./services/backgroundSync.js";
+import {
+    getCurrentLocation,
+    getLocationPermissionState,
+} from "./services/geolocationService.js";
 import { withBasePath } from "./config.js";
 
 import {
@@ -221,6 +225,8 @@ document.addEventListener("submit", async (event) => {
                     projectTitle: projectSelect.selectedOptions[0].textContent.trim(),
                     contactName: String(formData.get("contactName")).trim(),
                     proposal: String(formData.get("proposal")).trim(),
+                    meetingArea: String(formData.get("meetingArea") || "").trim(),
+                    deviceLocation: String(formData.get("deviceLocation") || ""),
                     createdAt,
                 },
             });
@@ -322,6 +328,55 @@ document.addEventListener("change", async (event) => {
  * Botones y acciones
  */
 document.addEventListener("click", async (event) => {
+    const requestLocationButton = event.target.closest("[data-request-location]");
+
+    if (requestLocationButton) {
+        const result = document.getElementById("location-request-result");
+        const permissionStatus = document.getElementById("location-permission-status");
+
+        requestLocationButton.disabled = true;
+
+        if (result) {
+            result.textContent = "Obteniendo ubicación aproximada…";
+        }
+
+        try {
+            const location = await getCurrentLocation();
+            const locationInput = document.getElementById("collaboration-device-location");
+
+            if (locationInput) {
+                locationInput.value = JSON.stringify(location);
+            }
+
+            if (result) {
+                result.textContent = `Ubicación aproximada obtenida y lista para adjuntarse a la propuesta (precisión de ${Math.round(location.accuracy)} metros).`;
+            }
+
+            showFeedback("Ubicación aproximada obtenida.", "success");
+        } catch (error) {
+            if (result) {
+                result.textContent = error.message;
+            }
+
+            showFeedback(error.message, "error");
+        } finally {
+            const permission = await getLocationPermissionState();
+
+            if (permissionStatus) {
+                permissionStatus.textContent = {
+                    granted: "Permitido",
+                    denied: "Bloqueado",
+                    prompt: "Aún no solicitado",
+                    unavailable: "No disponible en este navegador",
+                }[permission] ?? "No disponible";
+            }
+
+            requestLocationButton.disabled = false;
+        }
+
+        return;
+    }
+
     const retryOutboxButton = event.target.closest("[data-retry-outbox]");
 
     if (retryOutboxButton) {

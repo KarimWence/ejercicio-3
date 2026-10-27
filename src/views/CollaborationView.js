@@ -1,6 +1,7 @@
 import PublicationsService from "../services/itemsService.js";
 import { getOutboxItems } from "../services/dbService.js";
 import { supportsBackgroundSync } from "../services/backgroundSync.js";
+import { getLocationPermissionState } from "../services/geolocationService.js";
 import { withBasePath } from "../config.js";
 
 function escapeHTML(value) {
@@ -23,9 +24,16 @@ export default async function CollaborationView() {
     .filter((item) => item.type === "collaboration-request")
     .sort((first, second) => second.createdAt.localeCompare(first.createdAt));
   const endpoint = withBasePath("api/collaboration-requests");
+  const locationPermission = await getLocationPermissionState();
   const syncMode = supportsBackgroundSync()
     ? "Sincronización en segundo plano disponible"
     : "Modo de reintento al abrir, recuperar conexión o pulsar el botón";
+  const locationPermissionText = {
+    granted: "Permitido",
+    denied: "Bloqueado",
+    prompt: "Aún no solicitado",
+    unavailable: "No disponible en este navegador",
+  }[locationPermission] ?? "No disponible";
 
   return `
     <header class="hero hero--narrow">
@@ -52,8 +60,30 @@ export default async function CollaborationView() {
         <label for="collaboration-proposal">¿Cómo te gustaría colaborar?</label>
         <textarea id="collaboration-proposal" name="proposal" maxlength="1200" required></textarea>
       </div>
+      <div class="form-group">
+        <label for="collaboration-meeting-area">Zona o dirección para coordinar (opcional)</label>
+        <input id="collaboration-meeting-area" name="meetingArea" type="text" maxlength="160" autocomplete="street-address" placeholder="Ej. Centro de La Paz o colonia Universitaria" />
+        <p class="form-help">Puedes escribir una zona si prefieres no compartir la ubicación del dispositivo.</p>
+      </div>
+      <input id="collaboration-device-location" name="deviceLocation" type="hidden" />
       <button type="submit">Guardar propuesta</button>
     </form>
+
+    <section class="location-request" aria-labelledby="location-request-title">
+      <h3 id="location-request-title">Ubicación opcional</h3>
+      <p>
+        Podemos usar una ubicación aproximada para ayudarte a coordinar una zona o punto de encuentro con el proyecto seleccionado. Solo se solicitará si presionas el botón.
+      </p>
+      <p>
+        Estado del permiso: <strong id="location-permission-status">${locationPermissionText}</strong>.
+      </p>
+      <button type="button" class="diagnostic-button" data-request-location>
+        Usar mi ubicación aproximada
+      </button>
+      <p id="location-request-result" class="collaboration-form__note" role="status" aria-live="polite">
+        Si bloqueas el permiso, puedes continuar escribiendo una zona o dirección. Para habilitarlo después, usa el icono de candado junto a la dirección del sitio.
+      </p>
+    </section>
 
     <p class="collaboration-form__note">
       <strong>Estado de envío:</strong> ${syncMode}.<br />
