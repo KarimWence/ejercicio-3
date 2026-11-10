@@ -7,7 +7,7 @@ console.log("[SW] typeof indexedDB =>", typeof indexedDB);
 console.log("[SW] typeof caches =>", typeof caches);
 console.log("[SW] Scope =>", self.registration.scope);
 
-const CACHE_VERSION = "proyectos-ods-app-shell-v12";
+const CACHE_VERSION = "proyectos-ods-app-shell-v18";
 const OUTBOX_DB_NAME = "academicNetworkDB";
 const OUTBOX_DB_VERSION = 6;
 const OUTBOX_STORE = "outbox";
@@ -190,11 +190,42 @@ async function syncCollaborationOutbox() {
 }
 
 async function notifyOutboxSyncComplete(sentCount) {
+  if (sentCount <= 0) return;
+
+  if (
+    "Notification" in self &&
+    Notification.permission === "granted"
+  ) {
+    try {
+      await self.registration.showNotification("Propuestas enviadas", {
+        body: sentCount === 1
+          ? "Tu propuesta pendiente se envió correctamente."
+          : `Tus ${sentCount} propuestas pendientes se enviaron correctamente.`,
+
+        icon: new URL(
+          "icons/icon-192.png",
+          self.registration.scope
+        ).href,
+
+        tag: "collaboration-outbox-completed",
+        renotify: true,
+        data: {
+  url: new URL("#/colaborar", self.registration.scope).href,
+},
+      });
+    } catch (error) {
+      console.error("[SW] No se pudo mostrar la notificación:", error);
+    }
+  }
+
   const clients = await self.clients.matchAll({ type: "window" });
 
-  clients.forEach((client) =>
-    client.postMessage({ type: "OUTBOX_SYNC_COMPLETED", sentCount })
-  );
+  for (const client of clients) {
+    client.postMessage({
+      type: "OUTBOX_SYNC_COMPLETED",
+      sentCount,
+    });
+  }
 }
 
 function shouldHandle(request) {
@@ -404,3 +435,53 @@ function reportFetch(request, source, strategy) {
     })
     .catch((error) => console.error("[SW] No se pudo reportar la petición:", error));
 }
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+
+  event.waitUntil((async () => {
+    const scope = new URL(self.registration.scope);
+    const destination = new URL(
+      event.notification.data?.url || "#/colaborar",
+      scope
+    );
+
+    // Solo abre pantallas de esta aplicación.
+    if (
+      destination.origin !== scope.origin ||
+      !destination.pathname.startsWith(scope.pathname)
+    ) {
+      return;
+    }
+
+    const windows = await self.clients.matchAll({
+      type: "window",
+      includeUncontrolled: true,
+    });
+
+    const appWindow = windows.find((client) => {
+      const url = new URL(client.url);
+
+      return (
+        url.origin === scope.origin &&
+        url.pathname.startsWith(scope.pathname)
+      );
+    });
+
+    if (appWindow) {
+      try {
+        // Navega siempre: la aplicación usa rutas con #.
+        const navigated = await appWindow.navigate(destination.href);
+
+        if (navigated) {
+          await navigated.focus();
+          return;
+        }
+      } catch (error) {
+        console.warn("[SW] No se pudo reutilizar la pestaña:", error);
+      }
+    }
+
+    const opened = await self.clients.openWindow(destination.href);
+    if (opened) await opened.focus();
+  })());
+});

@@ -16,6 +16,7 @@ import {
 import {
     getCurrentLocation,
     getLocationPermissionState,
+    initializeLocationPermission,
 } from "./services/geolocationService.js";
 import { withBasePath } from "./config.js";
 
@@ -54,7 +55,7 @@ import FavoritesView, {
  * Inicializa el botón y los eventos de instalación
  */
 initializeInstall();
-
+initializeLocationPermission();
 
 const routes = [
     {
@@ -116,8 +117,9 @@ async function retryOutboxFallback(showResult = false) {
     }
 
     try {
-        const sentCount = await retryOutboxNow();
-        await refreshAfterOutboxChange();
+const sentCount = await retryOutboxNow();
+await notifyProposalsSent(sentCount);
+await refreshAfterOutboxChange();
 
         if (showResult) {
             showFeedback(
@@ -169,14 +171,15 @@ window.addEventListener("online", () => {
 });
 
 navigator.serviceWorker?.addEventListener("message", async (event) => {
-    if (event.data?.type !== "OUTBOX_SYNC_COMPLETED") {
-        return;
-    }
+    if (event.data?.type !== "OUTBOX_SYNC_COMPLETED") return;
+
+    showFeedback(
+        "Las propuestas pendientes se enviaron correctamente.",
+        "success"
+    );
 
     await refreshAfterOutboxChange();
-    showFeedback("Las propuestas pendientes se enviaron correctamente.", "success");
 });
-
 
 /*
  * Recupera y aplica el tema guardado
@@ -615,6 +618,127 @@ window.addEventListener("cache-updated", () => {
     });
 });
 
+const headerMenu = document.querySelector(".header-menu");
+
+document.addEventListener("click", (event) => {
+  if (headerMenu?.open && !headerMenu.contains(event.target)) {
+    headerMenu.open = false;
+  }
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && headerMenu?.open) {
+    headerMenu.open = false;
+    headerMenu.querySelector("summary")?.focus();
+  }
+});
+
+const notificationsButton = document.getElementById(
+    "enableNotificationsButton"
+);
+
+const notificationsMessage = document.getElementById(
+    "notificationsMessage"
+);
+
+function updateNotificationsControl() {
+    if (!notificationsButton || !notificationsMessage) return;
+
+    if (!("Notification" in window) || !("serviceWorker" in navigator)) {
+        notificationsButton.disabled = true;
+        notificationsMessage.textContent =
+            "Este navegador no admite estas notificaciones.";
+        return;
+    }
+
+    const permission = Notification.permission;
+
+    notificationsButton.disabled = permission !== "default";
+
+    notificationsButton.textContent = {
+        default: "Activar notificaciones",
+        granted: "Notificaciones activadas",
+        denied: "Notificaciones bloqueadas",
+    }[permission];
+
+    notificationsMessage.textContent = permission === "denied"
+        ? "Habilita Notificaciones desde la configuración del sitio y recarga."
+        : "Te avisaremos cuando se envíen las propuestas pendientes.";
+}
+
+notificationsButton?.addEventListener("click", async () => {
+    if (!("Notification" in window)) return;
+
+    try {
+        await Notification.requestPermission();
+    } catch (error) {
+        console.error("No se pudo solicitar el permiso:", error);
+    }
+
+    updateNotificationsControl();
+});
+updateNotificationsControl();
+
+window.addEventListener("focus", updateNotificationsControl);
+
+/**
+ * Notifica únicamente cuando se enviaron propuestas reales.
+ * No solicita permisos automáticamente.
+ */
+async function notifyProposalsSent(sentCount) {
+    console.log("[Notificaciones] Propuestas enviadas:", sentCount);
+
+    if (!sentCount) {
+        console.warn("[Notificaciones] No hay envíos que notificar.");
+        return;
+    }
+
+    if (!("Notification" in window) ||
+        !("serviceWorker" in navigator)) {
+        console.warn("[Notificaciones] Navegador no compatible.");
+        return;
+    }
+
+    console.log("[Notificaciones] Permiso:", Notification.permission);
+
+    if (Notification.permission !== "granted") {
+        console.warn("[Notificaciones] Sin permiso. No se genera el aviso.");
+        return;
+    }
+
+    try {
+        const registration =
+            await navigator.serviceWorker.getRegistration();
+
+        if (!registration?.active) {
+            console.warn("[Notificaciones] No hay Service Worker activo.");
+            return;
+        }
+
+await registration.showNotification("Propuestas enviadas", {
+    body: sentCount === 1
+        ? "Tu propuesta pendiente se envió correctamente."
+        : `Tus ${sentCount} propuestas pendientes se enviaron correctamente.`,
+
+    icon: new URL(
+        "icons/icon-192.png",
+        registration.scope
+    ).href,
+
+    tag: "collaboration-outbox-completed",
+    renotify: true,
+    data: {
+  url: new URL("#/colaborar", self.registration.scope).href,
+},
+});
+
+        console.log(
+            "[Notificaciones] showNotification terminó sin error."
+        );
+    } catch (error) {
+        console.error("[Notificaciones] Falló:", error);
+    }
+}
 
 /*
  * Inicia el router

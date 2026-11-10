@@ -430,3 +430,438 @@ select {
     transform: none;
   }
 } 
+
+
+.location-control {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  max-width: 19rem;
+}
+
+.location-button {
+  min-height: 2.625rem;
+  padding: 0.625rem 1rem;
+  border: 1px solid var(--forest);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.location-button:focus-visible {
+  outline: 3px solid var(--gold);
+  outline-offset: 3px;
+}
+
+.location-button:disabled {
+  cursor: default;
+}
+
+.location-button[data-state="granted"] {
+  border-color: #2f6f52;
+  border-width: 2px;
+}
+
+.location-button[data-state="denied"] {
+  border-color: var(--gold);
+  border-width: 2px;
+}
+
+.location-help {
+  color: var(--ink-soft);
+  font-size: 0.75rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.header-actions {
+  flex-wrap: wrap;
+  min-width: 0;
+  max-width: 100%;
+}
+
+
+/* Menú de opciones del App Shell */
+.site-header {
+  gap: 1rem;
+}
+
+.site-nav {
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+}
+
+.header-menu {
+  position: relative;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.header-menu__toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+  padding: 0.625rem 0.875rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 0.875rem;
+  font-weight: 600;
+  list-style: none;
+  cursor: pointer;
+  user-select: none;
+}
+
+.header-menu__toggle::-webkit-details-marker {
+  display: none;
+}
+
+.header-menu__toggle:hover,
+.header-menu[open] > .header-menu__toggle {
+  border-color: var(--gold);
+}
+
+.header-menu__toggle:focus-visible {
+  outline: 3px solid var(--gold);
+  outline-offset: 3px;
+}
+
+/* Panel desplegable */
+.header-menu > .header-actions {
+  display: none;
+  position: absolute;
+  top: calc(100% + 0.75rem);
+  right: 0;
+  z-index: 100;
+
+  width: min(21rem, calc(100vw - 2.5rem));
+  max-width: none;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--shadow);
+}
+
+.header-menu[open] > .header-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 1rem;
+}
+
+.header-menu .location-control {
+  width: 100%;
+  max-width: none;
+}
+
+.header-menu .location-button {
+  width: 100%;
+}
+
+.header-menu .location-help {
+  margin-top: 0.375rem;
+  font-size: 0.8125rem;
+}
+
+.header-menu .install-control {
+  width: 100%;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line);
+}
+
+.header-menu #installAppButton,
+.header-menu #themeToggle {
+  width: 100%;
+  justify-content: center;
+}
+
+/* El aviso de instalación ahora vive dentro del menú */
+.header-menu .header-actions .install-control #installAppMessage {
+  display: block;
+  position: static;
+  inset: auto;
+  width: 100%;
+  max-width: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: 0.8125rem;
+  box-shadow: none;
+  animation: none;
+  transform: none;
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.header-menu #installAppMessage:empty {
+  display: none;
+}
+
+/* En pantallas pequeñas, navegación en su propia fila */
+@media (max-width: 48em) {
+  .site-header .brand {
+    order: 0;
+  }
+
+  .site-header .header-menu {
+    order: 1;
+  }
+
+  .site-header .site-nav {
+    order: 2;
+    width: 100%;
+    gap: 0.5rem 1rem;
+    font-size: 0.875rem;
+  }
+
+  .header-menu__toggle span {
+    display: none;
+  }
+}
+/* Ajuste final del encabezado */
+.site-header {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 1.5rem;
+  padding: 1rem clamp(1rem, 3vw, 3rem);
+}
+
+.site-header .brand {
+  flex-shrink: 0;
+  gap: 0.35rem;
+}
+
+.site-header .site-nav {
+  margin-left: auto;
+  align-items: center;
+  gap: 0.5rem 1.25rem;
+  font-size: 0.875rem;
+}
+
+.site-header .site-nav a {
+  padding-block: 0.375rem;
+}
+
+.site-header .header-menu {
+  margin-left: 0;
+  flex-shrink: 0;
+}
+
+/* Solo el icono de hamburguesa */
+.header-menu__toggle {
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.header-menu__toggle > span {
+  display: none;
+}
+
+.header-menu__toggle:hover,
+.header-menu[open] > .header-menu__toggle {
+  background: var(--bg);
+  border-color: var(--gold);
+}
+
+/* Panel con los tres controles */
+.header-menu > .header-actions {
+  width: min(20rem, calc(100vw - 2rem));
+  padding: 1.25rem;
+  border-radius: 1rem;
+  box-shadow: 0 0.75rem 2rem rgb(0 0 0 / 12%);
+}
+
+.header-menu[open] > .header-actions {
+  gap: 1rem;
+}
+
+.header-menu .location-button {
+  min-height: 2.75rem;
+  border-radius: 0.75rem;
+  font-size: 0.8125rem;
+}
+
+.header-menu .location-help {
+  font-size: 0.75rem;
+  line-height: 1.6;
+}
+
+.header-menu #installAppButton,
+.header-menu #themeToggle {
+  min-height: 2.75rem;
+  border-radius: 0.75rem;
+}
+
+/* Logo y menú arriba; enlaces debajo en pantallas pequeñas */
+@media (max-width: 64em) {
+  .site-header {
+    flex-wrap: wrap;
+    gap: 0.75rem 1rem;
+  }
+
+  .site-header .brand {
+    order: 0;
+  }
+
+  .site-header .header-menu {
+    order: 1;
+    margin-left: auto;
+  }
+
+  .site-header .site-nav {
+    order: 2;
+    width: 100%;
+    margin-left: 0;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    white-space: nowrap;
+    padding-bottom: 0.25rem;
+    gap: 1.25rem;
+  }
+}
+
+/* Logo a la izquierda, navegación centrada y menú a la derecha */
+.site-header {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 1rem;
+}
+
+.site-header .brand {
+  justify-self: start;
+}
+
+.site-header .site-nav {
+  justify-self: center;
+  justify-content: center;
+  margin-left: 0;
+}
+
+.site-header .header-menu {
+  justify-self: end;
+  margin-left: 0;
+}
+
+/* Colores del menú en modo oscuro */
+[data-theme="dark"] .header-menu > .header-actions {
+  background: #1e211c;
+  color: #f2eee5;
+  border-color: #3b4037;
+  box-shadow: 0 0.75rem 2rem rgb(0 0 0 / 35%);
+}
+
+[data-theme="dark"] .header-menu__toggle,
+[data-theme="dark"] .header-menu .location-button {
+  background: #252920;
+  color: #f2eee5;
+  border-color: #626958;
+}
+
+[data-theme="dark"] .header-menu__toggle:hover,
+[data-theme="dark"] .header-menu[open] > .header-menu__toggle {
+  background: #303629;
+  border-color: #efb354;
+}
+
+[data-theme="dark"] .header-menu .location-button[data-state="denied"] {
+  border-color: #efb354;
+}
+
+[data-theme="dark"] .header-menu .location-button[data-state="granted"] {
+  border-color: #87c9a3;
+}
+
+[data-theme="dark"] .header-menu .location-help,
+[data-theme="dark"] .header-menu .header-actions
+.install-control #installAppMessage {
+  color: #c3c9bc;
+}
+
+[data-theme="dark"] .header-menu .install-control {
+  border-top-color: #3b4037;
+}
+
+/* En pantallas pequeñas, enlaces centrados en una segunda fila */
+@media (max-width: 64em) {
+  .site-header {
+    grid-template-columns: 1fr auto;
+  }
+
+  .site-header .brand {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .site-header .header-menu {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .site-header .site-nav {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: center;
+    white-space: normal;
+    overflow: visible;
+    margin: 0;
+  }
+}
+
+/* Entrada suave del menú */
+.header-menu[open] > .header-actions {
+  transform-origin: top right;
+  animation: menu-appear 180ms ease-out;
+}
+
+@keyframes menu-appear {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Movimiento del icono */
+.header-menu__toggle svg {
+  transition: transform 180ms ease;
+}
+
+.header-menu[open] > .header-menu__toggle svg {
+  transform: rotate(90deg);
+}
+
+/* Respeta la preferencia de reducir movimiento */
+@media (prefers-reduced-motion: reduce) {
+  .header-menu[open] > .header-actions {
+    animation: none;
+  }
+
+  .header-menu__toggle svg {
+    transition: none;
+  }
+}
