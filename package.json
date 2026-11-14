@@ -2,5 +2,27 @@
   "type": "module",
   "scripts": {
     "start": "node server.js"
+  },
+  "name": "ejercicio-3",
+  "version": "1.0.0",
+  "description": "- David Andres Hernández García\r - Humberto Peralta Meza\r - Karim Dasaev Wence Landin\r - Juan Daniel Hernández Rios\r - Yahir Radilla del Valle",
+  "main": "server.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KarimWence/ejercicio-3.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/KarimWence/ejercicio-3/issues"
+  },
+  "homepage": "https://github.com/KarimWence/ejercicio-3#readme",
+  "devDependencies": {
+    "vite": "^8.3.0"
+  },
+  "dependencies": {
+    "pg": "^8.23.1",
+    "web-push": "^4.0.0"
   }
 }

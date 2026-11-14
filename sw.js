@@ -7,7 +7,7 @@ console.log("[SW] typeof indexedDB =>", typeof indexedDB);
 console.log("[SW] typeof caches =>", typeof caches);
 console.log("[SW] Scope =>", self.registration.scope);
 
-const CACHE_VERSION = "proyectos-ods-app-shell-v18";
+const CACHE_VERSION = "proyectos-ods-app-shell-v20";
 const OUTBOX_DB_NAME = "academicNetworkDB";
 const OUTBOX_DB_VERSION = 6;
 const OUTBOX_STORE = "outbox";
@@ -44,6 +44,7 @@ const APP_SHELL = [
   "./src/services/dbService.js",
   "./src/services/itemsService.js",
   "./src/services/backgroundSync.js",
+  "./src/services/authService.js",
   "./src/services/geolocationService.js",
   "./src/services/shareService.js",
   "./src/utils/cacheDebug.js",
@@ -53,6 +54,7 @@ const APP_SHELL = [
   "./src/utils/storage.js",
   "./src/utils/theme.js",
   "./src/views/AboutView.js",
+  "./src/views/AccountView.js",
   "./src/views/DiagnosticsView.js",
   "./src/views/CollaborationView.js",
   "./src/views/FavoritesView.js",
@@ -172,7 +174,10 @@ async function syncCollaborationOutbox() {
   for (const item of pendingItems) {
     const response = await fetch(item.endpoint, {
       method: item.method,
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...(item.authorization ? { Authorization: item.authorization } : {}),
+      },
       body: JSON.stringify(item.payload),
     });
 

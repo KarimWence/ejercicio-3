@@ -28,7 +28,10 @@ export async function registerOutboxSync() {
 async function sendOutboxItem(item) {
   const response = await fetch(item.endpoint, {
     method: item.method,
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      ...(item.authorization ? { Authorization: item.authorization } : {}),
+    },
     body: JSON.stringify(item.payload),
   });
 

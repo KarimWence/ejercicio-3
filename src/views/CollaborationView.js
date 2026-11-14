@@ -2,7 +2,8 @@ import PublicationsService from "../services/itemsService.js";
 import { getOutboxItems } from "../services/dbService.js";
 import { supportsBackgroundSync } from "../services/backgroundSync.js";
 import { getLocationPermissionState } from "../services/geolocationService.js";
-import { withBasePath } from "../config.js";
+import { getCurrentUser } from "../services/authService.js";
+import { withBackendUrl } from "../config.js";
 
 function escapeHTML(value) {
   return String(value).replace(/[&<>"']/g, (character) => ({
@@ -23,7 +24,8 @@ export default async function CollaborationView() {
   const pendingItems = outboxItems
     .filter((item) => item.type === "collaboration-request")
     .sort((first, second) => second.createdAt.localeCompare(first.createdAt));
-  const endpoint = withBasePath("api/collaboration-requests");
+  const endpoint = withBackendUrl("api/collaboration-requests");
+  const user = getCurrentUser();
   const locationPermission = await getLocationPermissionState();
   const syncMode = supportsBackgroundSync()
     ? "Sincronización en segundo plano disponible"
@@ -42,6 +44,7 @@ export default async function CollaborationView() {
       <p class="hero__subtitle">Comparte cómo te gustaría participar en un proyecto de impacto social.</p>
     </header>
 
+    ${user ? `
     <form id="collaboration-form" class="project-form collaboration-form">
       <div class="form-group">
         <label for="collaboration-project">Proyecto</label>
@@ -68,6 +71,13 @@ export default async function CollaborationView() {
       <input id="collaboration-device-location" name="deviceLocation" type="hidden" />
       <button type="submit">Guardar propuesta</button>
     </form>
+    ` : `
+      <section class="card account-required">
+        <h3>Inicia sesión para enviar una propuesta</h3>
+        <p>La cuenta permite asociar tu propuesta y las futuras notificaciones Push a tu user_id.</p>
+        <a href="#/cuenta" data-link class="btn-link">Crear cuenta o iniciar sesión</a>
+      </section>
+    `}
 
     <section class="location-request" aria-labelledby="location-request-title">
       <h3 id="location-request-title">Ubicación opcional</h3>

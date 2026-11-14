@@ -18,7 +18,14 @@ import {
     getLocationPermissionState,
     initializeLocationPermission,
 } from "./services/geolocationService.js";
-import { withBasePath } from "./config.js";
+import { withBackendUrl, withBasePath } from "./config.js";
+import {
+    clearSession,
+    getAuthToken,
+    getCurrentUser,
+    loginUser,
+    registerUser,
+} from "./services/authService.js";
 
 import {
     deleteCookie,
@@ -46,6 +53,7 @@ import PublicationDetailView from "./views/ItemDetailView.js";
 import NewsView from "./views/NewsView.js";
 import DiagnosticsView from "./views/DiagnosticsView.js";
 import CollaborationView from "./views/CollaborationView.js";
+import AccountView from "./views/AccountView.js";
 
 import FavoritesView, {
     setFavoritesCategory,
@@ -73,6 +81,10 @@ const routes = [
     {
         path: "/colaborar",
         view: CollaborationView,
+    },
+    {
+        path: "/cuenta",
+        view: AccountView,
     },
     {
         path: "/acerca",
@@ -206,8 +218,48 @@ console.log(
  * Formularios
  */
 document.addEventListener("submit", async (event) => {
+    if (event.target.id === "register-form" || event.target.id === "login-form") {
+        event.preventDefault();
+
+        const formData = new FormData(event.target);
+        const button = event.target.querySelector('button[type="submit"]');
+        button.disabled = true;
+
+        try {
+            const user = event.target.id === "register-form"
+                ? await registerUser({
+                    name: String(formData.get("name") || "").trim(),
+                    email: String(formData.get("email") || "").trim(),
+                    password: String(formData.get("password") || ""),
+                })
+                : await loginUser({
+                    email: String(formData.get("email") || "").trim(),
+                    password: String(formData.get("password") || ""),
+                });
+
+            await router.render({ showSkeleton: false, scrollToTop: false });
+            updateAccountMenuLink();
+            showFeedback(`Sesión iniciada como ${user.name}.`, "success");
+        } catch (error) {
+            showFeedback(error.message, "error");
+        } finally {
+            button.disabled = false;
+        }
+
+        return;
+    }
+
     if (event.target.id === "collaboration-form") {
         event.preventDefault();
+
+        const authToken = getAuthToken();
+        const user = getCurrentUser();
+
+        if (!authToken || !user) {
+            showFeedback("Inicia sesión antes de enviar una propuesta.", "error");
+            window.location.hash = "/cuenta";
+            return;
+        }
 
         const formData = new FormData(event.target);
         const projectSelect = event.target.elements.projectId;
@@ -219,8 +271,10 @@ document.addEventListener("submit", async (event) => {
             await enqueueOutboxItem({
                 id,
                 type: "collaboration-request",
-                endpoint: withBasePath("api/collaboration-requests"),
+                endpoint: withBackendUrl("api/collaboration-requests"),
                 method: "POST",
+                authorization: `Bearer ${authToken}`,
+                userId: user.id,
                 status: "pending",
                 createdAt,
                 payload: {
@@ -332,6 +386,16 @@ document.addEventListener("change", async (event) => {
  * Botones y acciones
  */
 document.addEventListener("click", async (event) => {
+    const logoutButton = event.target.closest("[data-logout]");
+
+    if (logoutButton) {
+        clearSession();
+        await router.render({ showSkeleton: false, scrollToTop: false });
+        updateAccountMenuLink();
+        showFeedback("Sesión cerrada.", "success");
+        return;
+    }
+
     const requestLocationButton = event.target.closest("[data-request-location]");
 
         const shareButton = event.target.closest("[data-share-project]");
@@ -619,6 +683,18 @@ window.addEventListener("cache-updated", () => {
 });
 
 const headerMenu = document.querySelector(".header-menu");
+const accountMenuLink = document.getElementById("accountMenuLink");
+
+function updateAccountMenuLink() {
+  if (!accountMenuLink) return;
+
+  const user = getCurrentUser();
+  accountMenuLink.textContent = user
+    ? `Mi cuenta · ${user.name.split(" ")[0]}`
+    : "Iniciar sesión";
+}
+
+updateAccountMenuLink();
 
 document.addEventListener("click", (event) => {
   if (headerMenu?.open && !headerMenu.contains(event.target)) {

@@ -275,5 +275,49 @@
     "deviceLocation": "",
     "createdAt": "2026-11-10T07:24:48.659Z",
     "receivedAt": "2026-11-10T07:24:48.682Z"
+  },
+  {
+    "id": "890eafb3-6b19-40d6-8c39-dbc2dfdb43b0",
+    "projectId": "1",
+    "projectTitle": "Huertos urbanos comunitarios",
+    "contactName": "Roberto",
+    "proposal": "Ayudandoo",
+    "meetingArea": "",
+    "deviceLocation": "",
+    "createdAt": "2026-11-11T02:40:26.605Z",
+    "receivedAt": "2026-11-11T02:40:26.633Z"
+  },
+  {
+    "id": "1aabe73d-3352-453d-a57f-48b15c86af41",
+    "projectId": "2",
+    "projectTitle": "Plataforma de apoyo educativo",
+    "contactName": "Roberto",
+    "proposal": "Ayudando",
+    "meetingArea": "",
+    "deviceLocation": "",
+    "createdAt": "2026-11-11T02:42:27.199Z",
+    "receivedAt": "2026-11-11T02:42:52.878Z"
+  },
+  {
+    "id": "7d46bdda-e30f-4ae4-b7de-b8bdce0ce821",
+    "projectId": "4",
+    "projectTitle": "Red de colaboracion comunitaria",
+    "contactName": "Roberto 2",
+    "proposal": "Ayudando",
+    "meetingArea": "",
+    "deviceLocation": "",
+    "createdAt": "2026-11-11T02:44:14.600Z",
+    "receivedAt": "2026-11-11T02:44:14.619Z"
+  },
+  {
+    "id": "5ac8a65d-e655-4fc3-bb50-704bbbbb2d0e",
+    "projectId": "4",
+    "projectTitle": "Red de colaboracion comunitaria",
+    "contactName": "Roberto 2",
+    "proposal": "Ayudando",
+    "meetingArea": "",
+    "deviceLocation": "",
+    "createdAt": "2026-11-11T02:45:18.217Z",
+    "receivedAt": "2026-11-11T02:45:27.584Z"
   }
 ]

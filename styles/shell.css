@@ -452,6 +452,13 @@ select {
   cursor: pointer;
 }
 
+.account-menu-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
 .location-button:focus-visible {
   outline: 3px solid var(--gold);
   outline-offset: 3px;

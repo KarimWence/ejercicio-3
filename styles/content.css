@@ -1104,6 +1104,35 @@ html[data-theme="dark"] .status-badge {
   font-size: 0.85rem;
 }
 
+.account-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+}
+
+.account-form,
+.account-card,
+.account-required {
+  margin-bottom: 1.5rem;
+}
+
+.account-form h3,
+.account-required h3 {
+  margin-bottom: 1rem;
+  font-family: var(--font-display);
+}
+
+.account-card p,
+.account-required p {
+  margin-bottom: 0.75rem;
+}
+
+@media (min-width: 52em) {
+  .account-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 .outbox-section {
   border-top: 1px solid var(--theme-border);
   padding-top: 1.5rem;
