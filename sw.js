@@ -7,7 +7,7 @@ console.log("[SW] typeof indexedDB =>", typeof indexedDB);
 console.log("[SW] typeof caches =>", typeof caches);
 console.log("[SW] Scope =>", self.registration.scope);
 
-const CACHE_VERSION = "proyectos-ods-app-shell-v20";
+const CACHE_VERSION = "proyectos-ods-app-shell-v22";
 const OUTBOX_DB_NAME = "academicNetworkDB";
 const OUTBOX_DB_VERSION = 6;
 const OUTBOX_STORE = "outbox";
@@ -45,6 +45,7 @@ const APP_SHELL = [
   "./src/services/itemsService.js",
   "./src/services/backgroundSync.js",
   "./src/services/authService.js",
+  "./src/services/pushService.js",
   "./src/services/geolocationService.js",
   "./src/services/shareService.js",
   "./src/utils/cacheDebug.js",
@@ -102,6 +103,41 @@ self.addEventListener("message", (event) => {
     console.log("[SW] Mensaje SKIP_WAITING recibido");
     event.waitUntil(self.skipWaiting());
   }
+});
+
+self.addEventListener("push", (event) => {
+  let payload = {
+    title: "Proyectos ODS",
+    body: "Tienes una actualización en la aplicación.",
+    tag: "proyectos-ods-update",
+    url: "#/colaborar",
+  };
+
+  if (event.data) {
+    const rawData = event.data.text();
+
+    try {
+      const receivedData = JSON.parse(rawData);
+
+      if (receivedData && typeof receivedData === "object") {
+        payload = { ...payload, ...receivedData };
+      }
+    } catch {
+      // Plan B para mensajes Push enviados como texto plano.
+      payload.body = rawData || payload.body;
+    }
+  }
+
+  event.waitUntil(
+    self.registration.showNotification(payload.title, {
+      body: payload.body,
+      icon: new URL("icons/icon-192.png", self.registration.scope).href,
+      tag: payload.tag,
+      data: {
+        url: new URL(payload.url, self.registration.scope).href,
+      },
+    })
+  );
 });
 
 self.addEventListener("sync", (event) => {
@@ -196,32 +232,6 @@ async function syncCollaborationOutbox() {
 
 async function notifyOutboxSyncComplete(sentCount) {
   if (sentCount <= 0) return;
-
-  if (
-    "Notification" in self &&
-    Notification.permission === "granted"
-  ) {
-    try {
-      await self.registration.showNotification("Propuestas enviadas", {
-        body: sentCount === 1
-          ? "Tu propuesta pendiente se envió correctamente."
-          : `Tus ${sentCount} propuestas pendientes se enviaron correctamente.`,
-
-        icon: new URL(
-          "icons/icon-192.png",
-          self.registration.scope
-        ).href,
-
-        tag: "collaboration-outbox-completed",
-        renotify: true,
-        data: {
-  url: new URL("#/colaborar", self.registration.scope).href,
-},
-      });
-    } catch (error) {
-      console.error("[SW] No se pudo mostrar la notificación:", error);
-    }
-  }
 
   const clients = await self.clients.matchAll({ type: "window" });
 

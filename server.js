@@ -5,6 +5,7 @@ import path from "node:path";
 import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
 import { Pool } from "pg";
+import webpush from "web-push";
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const configuredBase = process.env.BASE_PATH ?? "/";
@@ -15,6 +16,8 @@ const COLLABORATION_API_PATH = `${API_PREFIX}/collaboration-requests`;
 const AUTH_REGISTER_PATH = `${API_PREFIX}/auth/register`;
 const AUTH_LOGIN_PATH = `${API_PREFIX}/auth/login`;
 const AUTH_ME_PATH = `${API_PREFIX}/auth/me`;
+const PUSH_PUBLIC_KEY_PATH = `${API_PREFIX}/push/public-key`;
+const PUSH_SUBSCRIBE_PATH = `${API_PREFIX}/push/subscribe`;
 const COLLABORATION_REQUESTS_FILE = path.join(ROOT, "data", "collaboration-requests.json");
 const USERS_FILE = path.join(ROOT, "data", "users.json");
 const PORT = Number(process.env.PORT) || 5501;
@@ -25,9 +28,26 @@ const scryptAsync = promisify(scrypt);
 // En producción debe configurarse como secreto en Render. El valor temporal solo
 // facilita las pruebas locales y hace que las sesiones caduquen al reiniciar.
 const AUTH_SECRET = process.env.AUTH_SECRET || randomBytes(32).toString("hex");
+const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY || "";
+const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY || "";
+const VAPID_SUBJECT = process.env.VAPID_SUBJECT || "";
 
 if (!process.env.AUTH_SECRET) {
   console.warn("[Auth] AUTH_SECRET no está definido; se usa una clave temporal solo para desarrollo.");
+}
+
+const pushIsConfigured = Boolean(
+  VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY && VAPID_SUBJECT
+);
+
+if (pushIsConfigured) {
+  webpush.setVapidDetails(
+    VAPID_SUBJECT,
+    VAPID_PUBLIC_KEY,
+    VAPID_PRIVATE_KEY
+  );
+} else {
+  console.warn("[Push] Faltan variables VAPID; las notificaciones Push no están disponibles.");
 }
 
 const database = process.env.DATABASE_URL
@@ -117,6 +137,17 @@ async function initializeDatabase() {
   `);
 
   await database.query(`
+    CREATE TABLE IF NOT EXISTS push_subscriptions (
+      id BIGSERIAL PRIMARY KEY,
+      user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      endpoint TEXT UNIQUE NOT NULL,
+      p256dh TEXT NOT NULL,
+      auth TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `);
+
+  await database.query(`
     CREATE TABLE IF NOT EXISTS collaboration_requests (
       id TEXT PRIMARY KEY,
       user_id UUID NOT NULL REFERENCES users(id),
@@ -174,12 +205,13 @@ async function createUser(user) {
 
 async function saveCollaborationRequest(requestData) {
   if (database) {
-    await database.query(
+    const result = await database.query(
       `INSERT INTO collaboration_requests (
         id, user_id, project_id, project_title, contact_name, proposal,
         meeting_area, device_location, created_at
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-      ON CONFLICT (id) DO NOTHING`,
+      ON CONFLICT (id) DO NOTHING
+      RETURNING id`,
       [
         requestData.id,
         requestData.userId,
@@ -192,7 +224,7 @@ async function saveCollaborationRequest(requestData) {
         requestData.createdAt,
       ]
     );
-    return;
+    return result.rowCount > 0;
   }
 
   const requests = await readJsonFile(COLLABORATION_REQUESTS_FILE);
@@ -200,7 +232,109 @@ async function saveCollaborationRequest(requestData) {
   if (!requests.some((request) => request.id === requestData.id)) {
     requests.push({ ...requestData, receivedAt: new Date().toISOString() });
     await writeFile(COLLABORATION_REQUESTS_FILE, JSON.stringify(requests, null, 2));
+    return true;
   }
+
+  return false;
+}
+
+function requirePushDatabase(res) {
+  if (!database) {
+    sendJson(res, 503, {
+      error: "Las suscripciones Push requieren la base de datos configurada en el backend.",
+    });
+    return false;
+  }
+
+  if (!pushIsConfigured) {
+    sendJson(res, 503, {
+      error: "Las llaves VAPID no están configuradas en el backend.",
+    });
+    return false;
+  }
+
+  return true;
+}
+
+function getSubscriptionData(subscription) {
+  const endpoint = String(subscription?.endpoint || "");
+  const p256dh = String(subscription?.keys?.p256dh || "");
+  const auth = String(subscription?.keys?.auth || "");
+
+  if (!endpoint || !p256dh || !auth) {
+    return null;
+  }
+
+  try {
+    new URL(endpoint);
+  } catch {
+    return null;
+  }
+
+  return { endpoint, p256dh, auth };
+}
+
+async function savePushSubscription(userId, subscription) {
+  await database.query(
+    `INSERT INTO push_subscriptions (user_id, endpoint, p256dh, auth)
+     VALUES ($1, $2, $3, $4)
+     ON CONFLICT (endpoint) DO UPDATE SET
+       user_id = EXCLUDED.user_id,
+       p256dh = EXCLUDED.p256dh,
+       auth = EXCLUDED.auth`,
+    [userId, subscription.endpoint, subscription.p256dh, subscription.auth]
+  );
+}
+
+async function removePushSubscription(userId, endpoint) {
+  await database.query(
+    "DELETE FROM push_subscriptions WHERE user_id = $1 AND endpoint = $2",
+    [userId, endpoint]
+  );
+}
+
+async function sendPushForCollaboration(userId, projectTitle) {
+  if (!database || !pushIsConfigured) {
+    return;
+  }
+
+  const result = await database.query(
+    "SELECT endpoint, p256dh, auth FROM push_subscriptions WHERE user_id = $1",
+    [userId]
+  );
+  const payload = JSON.stringify({
+    title: "Propuesta recibida",
+    body: `Tu propuesta para ${projectTitle} fue recibida correctamente.`,
+    tag: "collaboration-received",
+    url: "#/colaborar",
+  });
+
+  await Promise.all(
+    result.rows.map(async (subscription) => {
+      try {
+        await webpush.sendNotification(
+          {
+            endpoint: subscription.endpoint,
+            keys: { p256dh: subscription.p256dh, auth: subscription.auth },
+          },
+          payload,
+          { TTL: 300 }
+        );
+      } catch (error) {
+        if (error.statusCode === 404 || error.statusCode === 410) {
+          await database.query(
+            "DELETE FROM push_subscriptions WHERE endpoint = $1",
+            [subscription.endpoint]
+          );
+          console.log("[Push] Suscripción eliminada por estar vencida.");
+          return;
+        }
+
+        // Los errores del servicio Push, incluidos 429, no afectan el registro.
+        console.warn("[Push] No se pudo enviar una notificación:", error.statusCode || error.message);
+      }
+    })
+  );
 }
 
 async function hashPassword(password) {
@@ -352,6 +486,67 @@ async function handleCurrentUser(req, res) {
   return sendJson(res, 200, { user: sanitizeUser(user) });
 }
 
+async function handlePushPublicKey(req, res) {
+  if (req.method !== "GET") {
+    res.writeHead(405, { Allow: "GET" });
+    return res.end();
+  }
+
+  if (!pushIsConfigured) {
+    return sendJson(res, 503, {
+      error: "Las llaves VAPID no están configuradas en el backend.",
+    });
+  }
+
+  return sendJson(res, 200, { publicKey: VAPID_PUBLIC_KEY });
+}
+
+async function handlePushSubscription(req, res) {
+  const user = await getAuthenticatedUser(req);
+
+  if (!user) {
+    return sendJson(res, 401, { error: "Inicia sesión para administrar notificaciones Push." });
+  }
+
+  if (!requirePushDatabase(res)) {
+    return;
+  }
+
+  try {
+    if (req.method === "POST") {
+      const body = await readRequestJson(req);
+      const subscription = getSubscriptionData(body.subscription);
+
+      if (!subscription) {
+        return sendJson(res, 400, { error: "La suscripción Push no es válida." });
+      }
+
+      await savePushSubscription(user.id, subscription);
+      return sendJson(res, 201, { subscribed: true });
+    }
+
+    if (req.method === "DELETE") {
+      const body = await readRequestJson(req);
+      const endpoint = String(body.endpoint || "");
+
+      if (!endpoint) {
+        return sendJson(res, 400, { error: "Indica la suscripción que deseas eliminar." });
+      }
+
+      await removePushSubscription(user.id, endpoint);
+      return sendJson(res, 200, { subscribed: false });
+    }
+
+    res.writeHead(405, { Allow: "POST, DELETE" });
+    return res.end();
+  } catch (error) {
+    console.error("No se pudo administrar la suscripción Push:", error);
+    return sendJson(res, error.status || 500, {
+      error: error.status ? error.message : "No se pudo guardar la suscripción Push.",
+    });
+  }
+}
+
 async function handleCollaborationRequest(req, res) {
   if (req.method !== "POST") {
     res.writeHead(405, { Allow: "POST" });
@@ -375,10 +570,14 @@ async function handleCollaborationRequest(req, res) {
       return sendJson(res, 400, { error: "Faltan datos de la propuesta." });
     }
 
-    await saveCollaborationRequest({
+    const wasCreated = await saveCollaborationRequest({
       ...requestData,
       userId: user.id,
     });
+
+    if (wasCreated) {
+      await sendPushForCollaboration(user.id, requestData.projectTitle);
+    }
 
     return sendJson(res, 201, { id: requestData.id, received: true });
   } catch (error) {
@@ -414,6 +613,8 @@ http
     if (pathname === AUTH_REGISTER_PATH) return handleRegister(req, res);
     if (pathname === AUTH_LOGIN_PATH) return handleLogin(req, res);
     if (pathname === AUTH_ME_PATH) return handleCurrentUser(req, res);
+    if (pathname === PUSH_PUBLIC_KEY_PATH) return handlePushPublicKey(req, res);
+    if (pathname === PUSH_SUBSCRIBE_PATH) return handlePushSubscription(req, res);
     if (pathname === COLLABORATION_API_PATH) return handleCollaborationRequest(req, res);
 
     const rel = decodeURIComponent(pathname.slice(BASE.length));

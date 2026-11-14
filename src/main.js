@@ -26,6 +26,13 @@ import {
     loginUser,
     registerUser,
 } from "./services/authService.js";
+import {
+    getPushState,
+    isPushSupported,
+    resendPushSubscription,
+    subscribeToPush,
+    unsubscribeFromPush,
+} from "./services/pushService.js";
 
 import {
     deleteCookie,
@@ -129,9 +136,8 @@ async function retryOutboxFallback(showResult = false) {
     }
 
     try {
-const sentCount = await retryOutboxNow();
-await notifyProposalsSent(sentCount);
-await refreshAfterOutboxChange();
+        const sentCount = await retryOutboxNow();
+        await refreshAfterOutboxChange();
 
         if (showResult) {
             showFeedback(
@@ -174,6 +180,10 @@ window.addEventListener("load", async () => {
     if (!supportsBackgroundSync()) {
         retryOutboxFallback();
     }
+
+    resendPushSubscription().catch((error) => {
+        console.warn("[Push] No se pudo reenviar la suscripción:", error);
+    });
 });
 
 window.addEventListener("online", () => {
@@ -239,6 +249,10 @@ document.addEventListener("submit", async (event) => {
 
             await router.render({ showSkeleton: false, scrollToTop: false });
             updateAccountMenuLink();
+            updateNotificationsControl();
+            resendPushSubscription().catch((error) => {
+                console.warn("[Push] No se pudo reenviar la suscripción:", error);
+            });
             showFeedback(`Sesión iniciada como ${user.name}.`, "success");
         } catch (error) {
             showFeedback(error.message, "error");
@@ -392,6 +406,7 @@ document.addEventListener("click", async (event) => {
         clearSession();
         await router.render({ showSkeleton: false, scrollToTop: false });
         updateAccountMenuLink();
+        updateNotificationsControl();
         showFeedback("Sesión cerrada.", "success");
         return;
     }
@@ -720,101 +735,74 @@ const notificationsMessage = document.getElementById(
 function updateNotificationsControl() {
     if (!notificationsButton || !notificationsMessage) return;
 
-    if (!("Notification" in window) || !("serviceWorker" in navigator)) {
+    if (!isPushSupported()) {
         notificationsButton.disabled = true;
         notificationsMessage.textContent =
-            "Este navegador no admite estas notificaciones.";
+            "Este navegador no admite notificaciones Push.";
         return;
     }
 
-    const permission = Notification.permission;
+    const user = getCurrentUser();
 
-    notificationsButton.disabled = permission !== "default";
+    if (!user) {
+        notificationsButton.disabled = false;
+        notificationsButton.textContent = "Iniciar sesión para notificaciones";
+        notificationsMessage.textContent =
+            "Inicia sesión para asociar las notificaciones a tu cuenta.";
+        return;
+    }
 
-    notificationsButton.textContent = {
-        default: "Activar notificaciones",
-        granted: "Notificaciones activadas",
-        denied: "Notificaciones bloqueadas",
-    }[permission];
+    getPushState()
+        .then(({ permission, subscribed }) => {
+            if (permission === "denied") {
+                notificationsButton.disabled = true;
+                notificationsButton.textContent = "Notificaciones bloqueadas";
+                notificationsMessage.textContent =
+                    "Habilita Notificaciones desde la configuración del sitio y recarga.";
+                return;
+            }
 
-    notificationsMessage.textContent = permission === "denied"
-        ? "Habilita Notificaciones desde la configuración del sitio y recarga."
-        : "Te avisaremos cuando se envíen las propuestas pendientes.";
+            notificationsButton.disabled = false;
+            notificationsButton.textContent = subscribed
+                ? "Desactivar notificaciones"
+                : "Activar notificaciones";
+            notificationsMessage.textContent = subscribed
+                ? "Recibirás avisos cuando el servidor reciba una propuesta de colaboración."
+                : "Activa las notificaciones para recibir confirmaciones de tus propuestas.";
+        })
+        .catch((error) => {
+            notificationsButton.disabled = true;
+            notificationsMessage.textContent = error.message;
+        });
 }
 
 notificationsButton?.addEventListener("click", async () => {
-    if (!("Notification" in window)) return;
-
-    try {
-        await Notification.requestPermission();
-    } catch (error) {
-        console.error("No se pudo solicitar el permiso:", error);
+    if (!getCurrentUser()) {
+        window.location.hash = "/cuenta";
+        return;
     }
 
-    updateNotificationsControl();
+    notificationsButton.disabled = true;
+
+    try {
+        const { subscribed } = await getPushState();
+
+        if (subscribed) {
+            await unsubscribeFromPush();
+            showFeedback("Notificaciones desactivadas para este dispositivo.", "success");
+        } else {
+            await subscribeToPush();
+            showFeedback("Notificaciones activadas para este dispositivo.", "success");
+        }
+    } catch (error) {
+        showFeedback(error.message, "error");
+    } finally {
+        updateNotificationsControl();
+    }
 });
 updateNotificationsControl();
 
 window.addEventListener("focus", updateNotificationsControl);
-
-/**
- * Notifica únicamente cuando se enviaron propuestas reales.
- * No solicita permisos automáticamente.
- */
-async function notifyProposalsSent(sentCount) {
-    console.log("[Notificaciones] Propuestas enviadas:", sentCount);
-
-    if (!sentCount) {
-        console.warn("[Notificaciones] No hay envíos que notificar.");
-        return;
-    }
-
-    if (!("Notification" in window) ||
-        !("serviceWorker" in navigator)) {
-        console.warn("[Notificaciones] Navegador no compatible.");
-        return;
-    }
-
-    console.log("[Notificaciones] Permiso:", Notification.permission);
-
-    if (Notification.permission !== "granted") {
-        console.warn("[Notificaciones] Sin permiso. No se genera el aviso.");
-        return;
-    }
-
-    try {
-        const registration =
-            await navigator.serviceWorker.getRegistration();
-
-        if (!registration?.active) {
-            console.warn("[Notificaciones] No hay Service Worker activo.");
-            return;
-        }
-
-await registration.showNotification("Propuestas enviadas", {
-    body: sentCount === 1
-        ? "Tu propuesta pendiente se envió correctamente."
-        : `Tus ${sentCount} propuestas pendientes se enviaron correctamente.`,
-
-    icon: new URL(
-        "icons/icon-192.png",
-        registration.scope
-    ).href,
-
-    tag: "collaboration-outbox-completed",
-    renotify: true,
-    data: {
-  url: new URL("#/colaborar", self.registration.scope).href,
-},
-});
-
-        console.log(
-            "[Notificaciones] showNotification terminó sin error."
-        );
-    } catch (error) {
-        console.error("[Notificaciones] Falló:", error);
-    }
-}
 
 /*
  * Inicia el router

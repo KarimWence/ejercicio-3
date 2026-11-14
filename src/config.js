@@ -1,9 +1,9 @@
 // Directorio desde el que se sirve la aplicacion, por ejemplo "/" o "/ejercicio-3/".
 export const BASE_PATH = new URL(".", document.baseURI).pathname;
 
-// En local se deja vacío para usar el mismo servidor de la app. Al desplegar
-// el backend, se sustituye por su origen HTTPS, sin barra final.
-export const BACKEND_URL = "";
+// Origen HTTPS del backend desplegado. No es un secreto y no debe incluir
+// rutas como /api ni una barra final.
+export const BACKEND_URL = "https://proyectosods-api.onrender.com";
 
 export function withBasePath(path) {
 	return `${BASE_PATH}${path.replace(/^\/+/, "")}`;
