@@ -5,7 +5,7 @@ import path from "node:path";
 import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
 import { Pool } from "pg";
-import webpush from "web-push";
+import { sendNotification, setVapidDetails } from "web-push";
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const configuredBase = process.env.BASE_PATH ?? "/";
@@ -41,7 +41,7 @@ const pushIsConfigured = Boolean(
 );
 
 if (pushIsConfigured) {
-  webpush.setVapidDetails(
+  setVapidDetails(
     VAPID_SUBJECT,
     VAPID_PUBLIC_KEY,
     VAPID_PRIVATE_KEY
@@ -312,7 +312,7 @@ async function sendPushForCollaboration(userId, projectTitle) {
   await Promise.all(
     result.rows.map(async (subscription) => {
       try {
-        await webpush.sendNotification(
+        await sendNotification(
           {
             endpoint: subscription.endpoint,
             keys: { p256dh: subscription.p256dh, auth: subscription.auth },
